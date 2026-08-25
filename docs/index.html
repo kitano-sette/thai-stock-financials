@@ -5,14 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ข้อมูลงบการเงินหุ้นไทย (SET)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="config.js"></script>
 <style>
   :root{
-    --bg:#0f1720; --panel:#161f2b; --panel2:#1c2634; --border:#28323f;
-    --text:#e8edf3; --muted:#8ea0b3; --accent:#3ea6ff; --good:#3ecf8e; --bad:#ff6b6b;
+    --bg:#faf5ea; --panel:#ffffff; --border:#e9dfc8;
+    --text:#3c2c1e; --muted:#8a7358;
+    --brown-dark:#4a2f22; --brown-mid:#6e4430;
+    --gold:#d1a02c; --gold-light:#f3c93a; --gold-bg:#fff2c2;
+    --good:#2e7d46; --bad:#c0392b;
   }
   *{box-sizing:border-box;}
   body{
@@ -20,57 +22,68 @@
     min-height:100vh;
   }
   header{
-    padding:28px 20px 18px; text-align:center; border-bottom:1px solid var(--border);
-    background:linear-gradient(180deg,#131c27,#0f1720);
+    padding:34px 20px 26px; text-align:center;
+    background:linear-gradient(135deg,var(--brown-dark),var(--brown-mid) 60%, #8a5a3a);
+    box-shadow:0 4px 18px rgba(74,47,34,0.25);
   }
-  header h1{margin:0 0 4px; font-size:22px; font-weight:600;}
-  header p{margin:0; color:var(--muted); font-size:13px;}
+  header h1{margin:0 0 6px; font-size:23px; font-weight:700; color:#fff;}
+  header p{margin:0; color:#e8d9c2; font-size:13px;}
   .search-wrap{
-    max-width:520px; margin:22px auto 0; padding:0 16px; display:flex; gap:8px;
+    max-width:520px; margin:-22px auto 0; padding:0 16px; display:flex; gap:8px; position:relative; z-index:2;
   }
   #tickerInput{
-    flex:1; padding:14px 16px; border-radius:10px; border:1px solid var(--border);
+    flex:1; padding:15px 18px; border-radius:12px; border:1px solid var(--border);
     background:var(--panel); color:var(--text); font-size:16px; font-family:inherit;
-    outline:none;
+    outline:none; box-shadow:0 6px 16px rgba(74,47,34,0.15);
   }
-  #tickerInput:focus{border-color:var(--accent);}
+  #tickerInput:focus{border-color:var(--gold);}
   #searchBtn{
-    padding:14px 20px; border-radius:10px; border:none; background:var(--accent);
-    color:#04121f; font-weight:600; font-size:15px; cursor:pointer;
+    padding:15px 22px; border-radius:12px; border:none;
+    background:linear-gradient(135deg,var(--gold-light),var(--gold));
+    color:#4a2f16; font-weight:700; font-size:15px; cursor:pointer;
+    box-shadow:0 6px 16px rgba(209,160,44,0.35);
   }
   #searchBtn:disabled{opacity:.6; cursor:default;}
-  .hint{max-width:520px; margin:8px auto 0; padding:0 16px; color:var(--muted); font-size:12px; text-align:center;}
-  main{max-width:920px; margin:0 auto; padding:20px 16px 60px;}
+  main{max-width:940px; margin:0 auto; padding:32px 16px 60px;}
   #status{text-align:center; color:var(--muted); font-size:14px; margin:24px 0; min-height:20px;}
   .spinner{
-    width:22px; height:22px; border:3px solid var(--border); border-top-color:var(--accent);
+    width:22px; height:22px; border:3px solid var(--border); border-top-color:var(--gold);
     border-radius:50%; display:inline-block; vertical-align:middle; margin-right:8px;
     animation:spin 0.8s linear infinite;
   }
   @keyframes spin{to{transform:rotate(360deg);}}
-  .company-header{margin:18px 0 6px;}
-  .company-header h2{margin:0; font-size:20px;}
-  .company-header span{color:var(--muted); font-size:13px;}
-  .tabs{display:flex; gap:8px; margin:14px 0;}
+  .company-header{
+    margin:8px 0 6px; background:var(--panel); border:1px solid var(--border); border-radius:14px;
+    padding:18px 22px; box-shadow:0 3px 10px rgba(74,47,34,0.06);
+  }
+  .company-header h2{margin:0; font-size:21px; color:var(--brown-dark);}
+  .company-header h2 span{color:var(--muted); font-weight:400; font-size:15px;}
+  .company-header .updated{color:var(--muted); font-size:12px; margin-top:4px; display:block;}
+  .tabs{display:flex; gap:10px; margin:18px 0 6px; flex-wrap:wrap;}
   .tab{
-    padding:8px 16px; border-radius:8px; background:var(--panel); border:1px solid var(--border);
-    color:var(--muted); cursor:pointer; font-size:14px; font-family:inherit;
+    padding:10px 18px; border-radius:10px; background:var(--panel); border:1px solid var(--border);
+    color:var(--brown-mid); cursor:pointer; font-size:14px; font-family:inherit; font-weight:500;
   }
-  .tab.active{background:var(--accent); color:#04121f; border-color:var(--accent); font-weight:600;}
-  .grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:12px; margin-top:8px;}
+  .tab.active{
+    background:linear-gradient(135deg,var(--gold-light),var(--gold));
+    color:#4a2f16; border-color:var(--gold); font-weight:700;
+  }
+  .grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(210px,1fr)); gap:14px; margin-top:14px;}
   .card{
-    background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:14px 16px;
+    background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:16px 18px;
+    box-shadow:0 3px 10px rgba(74,47,34,0.05);
   }
-  .card .label{font-size:12px; color:var(--muted); margin-bottom:6px;}
-  .card .value{font-size:19px; font-weight:600;}
+  .card .label{font-size:12.5px; color:var(--muted); margin-bottom:8px; font-weight:500;}
+  .card .value{font-size:20px; font-weight:700; color:var(--brown-dark);}
   .card .value.good{color:var(--good);}
   .card .value.bad{color:var(--bad);}
-  .section-title{margin:26px 0 4px; font-size:14px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em;}
-  .chart-box{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; margin-top:24px;}
-  footer{text-align:center; color:var(--muted); font-size:12px; padding:20px; border-top:1px solid var(--border);}
+  .card .value.highlight{
+    display:inline-block; background:var(--gold-bg); padding:3px 10px; border-radius:8px;
+  }
+  footer{text-align:center; color:var(--muted); font-size:12px; padding:26px 20px; border-top:1px solid var(--border); margin-top:20px;}
   .error-box{
     max-width:520px; margin:20px auto; padding:14px 16px; border-radius:10px;
-    background:#2a1616; border:1px solid #4a2323; color:#ff9b9b; font-size:14px; text-align:center;
+    background:#fdecea; border:1px solid #f3b3ac; color:var(--bad); font-size:14px; text-align:center;
   }
 </style>
 </head>
@@ -85,7 +98,6 @@
   <input id="tickerInput" type="text" placeholder="เช่น PTT, AOT, CPALL, KBANK ..." autocomplete="off" />
   <button id="searchBtn">ค้นหา</button>
 </div>
-<div class="hint">ไม่ต้องพิมพ์ .BK ระบบเติมให้อัตโนมัติ · ข้อมูลอัปเดตอัตโนมัติทุกวัน</div>
 
 <main>
   <div id="status"></div>
@@ -138,23 +150,23 @@ function colorClass(v, goodIfHigh=true){
 }
 
 const METRIC_DEFS = [
-  { key:'total_liabilities', label:'1. หนี้สินรวม', fmt:{money:true} },
-  { key:'interest_bearing_debt', label:'2. หนี้สินที่มีภาระดอกเบี้ย', fmt:{money:true} },
-  { key:'de_ratio', label:'3. หนี้สิน/ทุน (D/E)', fmt:{ratio:true}, badHigh:true },
-  { key:'net_debt_to_ebitda', label:'4. Net Debt / EBITDA', fmt:{ratio:true}, badHigh:true },
-  { key:'ebitda', label:'5. EBITDA', fmt:{money:true}, goodHigh:true },
-  { key:'ebit', label:'6. กำไรก่อนดอกเบี้ย (EBIT)', fmt:{money:true}, goodHigh:true },
-  { key:'interest_expense', label:'7. ดอกเบี้ยจ่าย', fmt:{money:true} },
-  { key:'interest_coverage_ratio', label:'8. Interest Coverage Ratio', fmt:{ratio:true}, goodHigh:true },
-  { key:'cfo', label:'9. กระแสเงินสดจากการดำเนินงาน (CFO)', fmt:{money:true}, goodHigh:true },
-  { key:'fcf', label:'10. Free Cash Flow (FCF)', fmt:{money:true}, goodHigh:true },
-  { key:'cash_and_equivalents', label:'11. เงินสดและรายการเทียบเท่าเงินสด', fmt:{money:true} },
-  { key:'current_ratio', label:'12. Current Ratio', fmt:{ratio:true}, goodHigh:true },
-  { key:'net_income', label:'13. กำไรสุทธิ', fmt:{money:true}, goodHigh:true },
-  { key:'roe', label:'14. ROE', fmt:{pct:true}, goodHigh:true },
-  { key:'roa', label:'14. ROA', fmt:{pct:true}, goodHigh:true },
-  { key:'revenue_growth', label:'15. การเติบโตของรายได้', fmt:{pct:true}, goodHigh:true },
-  { key:'earnings_growth', label:'16. การเติบโตของกำไร', fmt:{pct:true}, goodHigh:true },
+  { key:'total_liabilities', label:'หนี้สินรวม', fmt:{money:true} },
+  { key:'interest_bearing_debt', label:'หนี้สินที่มีภาระดอกเบี้ย', fmt:{money:true} },
+  { key:'de_ratio', label:'หนี้สิน/ทุน (D/E)', fmt:{ratio:true}, badHigh:true },
+  { key:'net_debt_to_ebitda', label:'Net Debt / EBITDA', fmt:{ratio:true}, badHigh:true },
+  { key:'ebitda', label:'EBITDA', fmt:{money:true}, goodHigh:true },
+  { key:'ebit', label:'กำไรก่อนดอกเบี้ย (EBIT)', fmt:{money:true}, goodHigh:true },
+  { key:'interest_expense', label:'ดอกเบี้ยจ่าย', fmt:{money:true} },
+  { key:'interest_coverage_ratio', label:'Interest Coverage Ratio', fmt:{ratio:true}, goodHigh:true },
+  { key:'cfo', label:'กระแสเงินสดจากการดำเนินงาน (CFO)', fmt:{money:true}, goodHigh:true },
+  { key:'fcf', label:'Free Cash Flow (FCF)', fmt:{money:true}, goodHigh:true },
+  { key:'cash_and_equivalents', label:'เงินสดและรายการเทียบเท่าเงินสด', fmt:{money:true} },
+  { key:'current_ratio', label:'Current Ratio', fmt:{ratio:true}, goodHigh:true },
+  { key:'net_income', label:'กำไรสุทธิ', fmt:{money:true}, goodHigh:true },
+  { key:'roe', label:'ROE', fmt:{pct:true}, goodHigh:true },
+  { key:'roa', label:'ROA', fmt:{pct:true}, goodHigh:true },
+  { key:'revenue_growth', label:'การเติบโตของรายได้', fmt:{pct:true}, goodHigh:true },
+  { key:'earnings_growth', label:'การเติบโตของกำไร', fmt:{pct:true}, goodHigh:true },
 ];
 
 function renderMetrics(row){
@@ -162,7 +174,7 @@ function renderMetrics(row){
     const v = row[def.key];
     let cls = '';
     if (def.goodHigh) cls = colorClass(v, true);
-    if (def.badHigh) cls = colorClass(v, false); // จริงๆ ใช้เกณฑ์คงที่ด้านล่างแทน
+    if (def.badHigh) cls = colorClass(v, false);
     if (def.key === 'de_ratio') cls = (v!==null && v<=1.5) ? 'good' : (v!==null? 'bad':'');
     if (def.key === 'net_debt_to_ebitda') cls = (v!==null && v<=3) ? 'good' : (v!==null? 'bad':'');
     if (def.key === 'current_ratio') cls = (v!==null && v>=1) ? 'good' : (v!==null? 'bad':'');
@@ -175,12 +187,22 @@ function renderMetrics(row){
   return `<div class="grid">${cards}</div>`;
 }
 
+function tabLabel(row){
+  if (!row) return '';
+  if (row.period_type === 'annual'){
+    // fiscal_label ถูกเก็บเป็นรูปแบบ "FY2025" อยู่แล้ว
+    return `ปีบัญชี: ${row.fiscal_label || '-'}`;
+  }
+  // fiscal_label ของไตรมาสถูกเก็บเป็นรูปแบบ "Q2/2026" อยู่แล้ว
+  return `ไตรมาส: ${row.fiscal_label || '-'}`;
+}
+
 function renderTabs(){
-  const hasAnnual = currentRows.some(r=>r.period_type==='annual');
-  const hasQ = currentRows.some(r=>r.period_type==='quarterly');
+  const annualRow = currentRows.find(r=>r.period_type==='annual');
+  const qRow = currentRows.find(r=>r.period_type==='quarterly');
   return `<div class="tabs">
-    ${hasAnnual? `<button class="tab ${currentTab==='annual'?'active':''}" data-tab="annual">ปีล่าสุด (Annual)</button>`:''}
-    ${hasQ? `<button class="tab ${currentTab==='quarterly'?'active':''}" data-tab="quarterly">ไตรมาสล่าสุด (Quarterly)</button>`:''}
+    ${annualRow? `<button class="tab ${currentTab==='annual'?'active':''}" data-tab="annual">${tabLabel(annualRow)}</button>`:''}
+    ${qRow? `<button class="tab ${currentTab==='quarterly'?'active':''}" data-tab="quarterly">${tabLabel(qRow)}</button>`:''}
   </div>`;
 }
 
@@ -190,46 +212,13 @@ function renderAll(companyName, ticker){
   els.result.innerHTML = `
     <div class="company-header">
       <h2>${companyName || ticker} <span>(${ticker})</span></h2>
-      <span>งวดบัญชี: ${row.fiscal_label || row.period_end || '-'} · อัปเดตล่าสุด: ${new Date(row.updated_at).toLocaleString('th-TH')}</span>
+      <span class="updated">อัปเดตล่าสุด: ${new Date(row.updated_at).toLocaleString('th-TH')}</span>
     </div>
     ${renderTabs()}
     ${renderMetrics(row)}
-    <div class="section-title">แนวโน้มรายได้ &amp; กำไรสุทธิ (ย้อนหลัง)</div>
-    <div class="chart-box"><canvas id="trendChart" height="110"></canvas></div>
   `;
   document.querySelectorAll('.tab').forEach(btn=>{
     btn.addEventListener('click', ()=>{ currentTab = btn.dataset.tab; renderAll(companyName, ticker); });
-  });
-  drawTrendChart(ticker);
-}
-
-async function drawTrendChart(ticker){
-  const { data } = await sb.from('financials')
-    .select('fiscal_label, revenue, net_income, period_end')
-    .eq('ticker', ticker)
-    .eq('period_type', currentTab)
-    .order('period_end', { ascending:true })
-    .limit(8);
-  if (!data || data.length===0) return;
-  const ctx = document.getElementById('trendChart');
-  if (!ctx) return;
-  new Chart(ctx, {
-    type:'bar',
-    data:{
-      labels: data.map(d=>d.fiscal_label),
-      datasets:[
-        { label:'รายได้', data:data.map(d=>d.revenue), backgroundColor:'#3ea6ff' },
-        { label:'กำไรสุทธิ', data:data.map(d=>d.net_income), backgroundColor:'#3ecf8e' },
-      ]
-    },
-    options:{
-      responsive:true,
-      plugins:{ legend:{ labels:{ color:'#e8edf3' } } },
-      scales:{
-        x:{ ticks:{ color:'#8ea0b3' }, grid:{ color:'#28323f' } },
-        y:{ ticks:{ color:'#8ea0b3' }, grid:{ color:'#28323f' } },
-      }
-    }
   });
 }
 
