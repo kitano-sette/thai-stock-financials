@@ -40,8 +40,11 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // หมายเหตุ: SUPABASE_URL และ SUPABASE_SERVICE_ROLE_KEY เป็นค่าที่ Supabase
+    // ใส่ให้ Edge Function โดยอัตโนมัติอยู่แล้ว ไม่ต้องตั้งเองด้วย `supabase secrets set`
+    // (จริงๆ ตั้งเองไม่ได้ด้วย เพราะชื่อขึ้นต้นด้วย SUPABASE_ เป็นชื่อสงวน)
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_KEY")!;
+    const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const GITHUB_TOKEN = Deno.env.get("GITHUB_TOKEN")!;
     const GITHUB_REPO = Deno.env.get("GITHUB_REPO")!; // เช่น "somchai/thai-stock-financials"
 
