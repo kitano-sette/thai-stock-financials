@@ -47,10 +47,38 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
-    // 1) บันทึกลง watchlist (เผื่อ GitHub Actions ครั้งนี้ยิงไม่สำเร็จ พรุ่งนี้ก็จะยังถูกอัปเดตอัตโนมัติ)
-    await supabase.from("watchlist").upsert({ ticker, requested_at: new Date().toISOString() });
+    console.log(`[trigger-update] request for ticker=${ticker}`);
 
-    // 2) สั่ง GitHub Actions ให้รันทันที (workflow_dispatch)
+    // 1) บันทึกลง watchlist (เผื่อ GitHub Actions ครั้งนี้ยิงไม่สำเร็จ พรุ่งนี้ก็จะยังถูกอัปเดตอัตโนมัติ)
+    const { error: dbError } = await supabase
+      .from("watchlist")
+      .upsert({ ticker, requested_at: new Date().toISOString() });
+    if (dbError) console.log(`[trigger-update] watchlist upsert error: ${JSON.stringify(dbError)}`);
+
+    // 2) หา default branch ของ repo อัตโนมัติ (ไม่พึ่งว่าต้องชื่อ "main" เสมอไป)
+    const repoInfoResp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}`, {
+      headers: {
+        Authorization: `Bearer ${GITHUB_TOKEN}`,
+        Accept: "application/vnd.github+json",
+      },
+    });
+    if (!repoInfoResp.ok) {
+      const text = await repoInfoResp.text();
+      console.log(`[trigger-update] GET repo failed [${repoInfoResp.status}]: ${text}`);
+      return new Response(
+        JSON.stringify({
+          error: "อ่านข้อมูล repo ไม่สำเร็จ ตรวจสอบว่า GITHUB_REPO และ GITHUB_TOKEN ถูกต้องหรือไม่",
+          status: repoInfoResp.status,
+          detail: text,
+        }),
+        { status: 502, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+      );
+    }
+    const repoInfo = await repoInfoResp.json();
+    const defaultBranch = repoInfo.default_branch || "main";
+    console.log(`[trigger-update] default branch = ${defaultBranch}`);
+
+    // 3) สั่ง GitHub Actions ให้รันทันที (workflow_dispatch)
     const ghResp = await fetch(
       `https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/update.yml/dispatches`,
       {
@@ -61,7 +89,7 @@ Deno.serve(async (req: Request) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ref: "main",
+          ref: defaultBranch,
           inputs: { ticker },
         }),
       }
@@ -69,17 +97,20 @@ Deno.serve(async (req: Request) => {
 
     if (!ghResp.ok) {
       const text = await ghResp.text();
+      console.log(`[trigger-update] dispatch failed [${ghResp.status}]: ${text}`);
       return new Response(
-        JSON.stringify({ error: "สั่ง GitHub Actions ไม่สำเร็จ", detail: text }),
+        JSON.stringify({ error: "สั่ง GitHub Actions ไม่สำเร็จ", status: ghResp.status, detail: text }),
         { status: 502, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
       );
     }
 
+    console.log(`[trigger-update] dispatch success for ${ticker} on branch ${defaultBranch}`);
     return new Response(
-      JSON.stringify({ status: "triggered", ticker }),
+      JSON.stringify({ status: "triggered", ticker, branch: defaultBranch }),
       { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
     );
   } catch (err) {
+    console.log(`[trigger-update] exception: ${String(err)}`);
     return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,
       headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
