@@ -1,0 +1,42 @@
+name: Update Thai Stock Financials
+
+on:
+  schedule:
+    # รันทุกวัน เวลา 22:00 UTC = 05:00 น. เวลาไทย (วันถัดไป)
+    - cron: "0 22 * * *"
+  workflow_dispatch:
+    inputs:
+      ticker:
+        description: "ระบุ ticker ตัวเดียวถ้าต้องการอัปเดตด่วน (เว้นว่างไว้ = อัปเดตทุกตัว)"
+        required: false
+        default: ""
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run update (single ticker)
+        if: ${{ github.event.inputs.ticker != '' }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python fetch_financials.py --ticker "${{ github.event.inputs.ticker }}"
+
+      - name: Run update (all tickers)
+        if: ${{ github.event.inputs.ticker == '' }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python fetch_financials.py --all --seed-file tickers_seed.txt
