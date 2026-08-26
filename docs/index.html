@@ -70,9 +70,10 @@
   /* ---- gauge card ---- */
   .gauge-card{ background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:18px 18px 20px; margin-bottom:12px; text-align:center;}
   .gauge-title{ font-weight:700; font-size:15px; color:var(--brown-dark); margin-bottom:6px; text-align:left;}
-  .gauge-wrap{ position:relative; width:220px; height:130px; margin:6px auto 0; }
+  .gauge-wrap{ position:relative; width:280px; height:170px; margin:6px auto 0; }
   .gauge-wrap svg{ width:100%; height:100%; overflow:visible; }
-  .gauge-score{ font-size:44px; font-weight:800; color:var(--brown-dark); line-height:1; margin-top:2px; }
+  .gauge-inner{ position:absolute; left:0; right:0; bottom:8px; text-align:center; }
+  .gauge-score{ font-size:56px; font-weight:800; color:#2e9e5b; line-height:1; }
   .gauge-sub{ font-size:12.5px; color:var(--muted); margin-top:2px; }
   .gauge-level{ font-size:17px; font-weight:700; margin-top:2px; }
   .gauge-level.low{ color:var(--good); } .gauge-level.mid{ color:var(--warn); } .gauge-level.high{ color:var(--bad); }
@@ -276,30 +277,35 @@ function gaugeColor(score){
   return '#e0453c';
 }
 function renderGauge(score){
-  const cx=110, cy=110, r=88;
+  const cx=150, cy=140, r=118;
   const pct = score===null||score===undefined ? 0 : Math.max(0,Math.min(100,score))/100;
   const theta = Math.PI * (1 - pct);
-  const nx = cx + r*0.82*Math.cos(theta);
-  const ny = cy - r*0.82*Math.sin(theta);
-  const color = gaugeColor(score);
+  // เข็มเป็นขีดสั้นๆ ขวางแถบสี (จากขอบในไปขอบนอกของวงแหวน) ณ ตำแหน่งคะแนน
+  const rInner = r - 15, rOuter = r + 15;
+  const ix = cx + rInner*Math.cos(theta), iy = cy - rInner*Math.sin(theta);
+  const ox = cx + rOuter*Math.cos(theta), oy = cy - rOuter*Math.sin(theta);
   return `
   <div class="gauge-wrap">
-    <svg viewBox="0 0 220 130">
+    <svg viewBox="0 0 300 170">
       <defs>
         <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#e0453c"/>
-          <stop offset="35%" stop-color="#f0a02a"/>
-          <stop offset="65%" stop-color="#e8c93a"/>
-          <stop offset="100%" stop-color="#2e9e5b"/>
+          <stop offset="0%" stop-color="#4caf50"/>
+          <stop offset="30%" stop-color="#cddc39"/>
+          <stop offset="50%" stop-color="#ffc107"/>
+          <stop offset="72%" stop-color="#ff7a1a"/>
+          <stop offset="100%" stop-color="#e53230"/>
         </linearGradient>
       </defs>
-      <path d="M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}" fill="none" stroke="url(#gaugeGrad)" stroke-width="16" stroke-linecap="round"/>
-      <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="#3c2c1e" stroke-width="4" stroke-linecap="round"/>
-      <circle cx="${cx}" cy="${cy}" r="7" fill="#3c2c1e"/>
-      <text x="${cx-r-4}" y="${cy+18}" font-size="10" fill="#8a7358" text-anchor="middle">0</text>
-      <text x="${cx}" y="${cy-r-8}" font-size="10" fill="#8a7358" text-anchor="middle">50</text>
-      <text x="${cx+r+4}" y="${cy+18}" font-size="10" fill="#8a7358" text-anchor="middle">100</text>
+      <path d="M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}" fill="none" stroke="url(#gaugeGrad)" stroke-width="22" stroke-linecap="round"/>
+      <line x1="${ix}" y1="${iy}" x2="${ox}" y2="${oy}" stroke="#2b2320" stroke-width="4.5" stroke-linecap="round"/>
+      <circle cx="${ix}" cy="${iy}" r="5" fill="#2b2320"/>
+      <text x="${cx-r-6}" y="${cy+20}" font-size="12" fill="#8a7358" text-anchor="middle">0</text>
+      <text x="${cx}" y="${cy-r-14}" font-size="12" fill="#8a7358" text-anchor="middle">50</text>
+      <text x="${cx+r+8}" y="${cy+20}" font-size="12" fill="#8a7358" text-anchor="middle">100</text>
     </svg>
+    <div class="gauge-inner">
+      <div class="gauge-score">${score===null||score===undefined?'—':Math.round(score)}</div>
+    </div>
   </div>`;
 }
 function renderRiskScoreHeader(row){
@@ -318,26 +324,37 @@ function renderRiskScoreHeader(row){
   const bandRow = bands.map(b=>`<div class="band ${b.cls} ${level.band===b.n?'active':''}">${b.label}<span class="rng">${b.range}</span></div>`).join('');
   return `
   <div class="gauge-card">
-    <div class="gauge-title">Bond Risk Score</div>
+    <div class="gauge-title">Risk Score</div>
     ${renderGauge(row.risk_score)}
-    <div class="gauge-score">${row.risk_score===null||row.risk_score===undefined?'—':Math.round(row.risk_score)}</div>
     <div class="gauge-sub">ระดับความเสี่ยง</div>
     <div class="gauge-level ${level.cls}">${level.text}</div>
     <div class="gauge-desc">${descMap[level.cls] || ''}</div>
     <div class="band-row">${bandRow}</div>
+    <div class="risk-disclaimer">ไม่ควรเชื่อคะแนนตัวเลข โปรดอ่านงบการเงินฉบับจริง หมายเหตุประกอบงบการเงิน และติดตามข่าวบริษัทประกอบเสมอทุกครั้งก่อนลงทุน</div>
   </div>`;
 }
 
 /* ============== Category summary + detail ============== */
 function buildRiskCategories(row){
-  const ibShare = (row.interest_bearing_debt!=null && row.total_liabilities) ? row.interest_bearing_debt/row.total_liabilities : null;
+  // ใช้ตัวเลขจากงบไตรมาสล่าสุด (risk_*) ถ้ามี ไม่งั้น fallback เป็นตัวเลขรายปีตามปกติ
+  const qLabel = row.risk_score_quarter_label || null;
+  const ibDebtVal = row.risk_interest_bearing_debt!=null ? row.risk_interest_bearing_debt : row.interest_bearing_debt;
+  const totalLiabVal = row.risk_total_liabilities!=null ? row.risk_total_liabilities : row.total_liabilities;
+  const ibDeRatio = row.risk_ib_de_ratio!=null ? row.risk_ib_de_ratio : row.ib_de_ratio;
+  const ibDebtToAsset = row.risk_ib_debt_to_asset!=null ? row.risk_ib_debt_to_asset : row.ib_debt_to_asset;
+  const curRatio = row.risk_current_ratio!=null ? row.risk_current_ratio : row.current_ratio;
+  const cashVal = row.risk_cash_and_equivalents!=null ? row.risk_cash_and_equivalents : row.cash_and_equivalents;
+  const shortDebtVal = row.risk_short_term_debt!=null ? row.risk_short_term_debt : row.short_term_debt;
+
+  const ibShare = (ibDebtVal!=null && totalLiabVal) ? ibDebtVal/totalLiabVal : null;
   const ebitdaInterest = (row.ebitda!=null && row.ebitda>=0 && row.interest_expense) ? row.ebitda/row.interest_expense : null;
-  const cfoToDebt = (row.cfo!=null && row.interest_bearing_debt) ? row.cfo/row.interest_bearing_debt : null;
-  const cashToShortDebt = (row.cash_and_equivalents!=null && row.short_term_debt) ? row.cash_and_equivalents/row.short_term_debt : null;
+  const cfoToDebt = (row.cfo!=null && ibDebtVal) ? row.cfo/ibDebtVal : null;
+  const cashToShortDebt = (cashVal!=null && shortDebtVal) ? cashVal/shortDebtVal : null;
   const netMargin = (row.net_income!=null && row.revenue) ? row.net_income/row.revenue*100 : null;
   const ebitdaNeg = row.ebitda!=null && row.ebitda < 0;
   const netIncomeNeg = row.net_income!=null && row.net_income < 0;
 
+  const star = qLabel ? '*' : '';
   const dTrend = trendText(row.debt_trend, 'down');
   const ieTrend = trendText(row.interest_expense_trend, 'down');
   const fcfTrend = trendText(row.fcf_trend, 'up');
@@ -347,11 +364,11 @@ function buildRiskCategories(row){
   return [
     { icon:'⚖️', name:'Leverage / ภาระหนี้', weight:30, score: row.risk_leverage,
       items:[
-        { name:'D/E (หนี้มีภาระดอกเบี้ย)', val: fmtNum(row.ib_de_ratio,{ratio:true}), cls: row.ib_de_ratio!=null?(row.ib_de_ratio<=1?'good':'bad'):'neutral', desc:'บริษัทมีหนี้ที่ต้องจ่ายดอกเบี้ยมากเมื่อเทียบกับเงินทุนของเจ้าของ' },
+        { name:`IBD/E${star}`, val: fmtNum(ibDeRatio,{ratio:true}), cls: ibDeRatio!=null?(ibDeRatio<=1?'good':'bad'):'neutral', desc:'บริษัทมีหนี้ที่ต้องจ่ายดอกเบี้ยมากเมื่อเทียบกับเงินทุนของเจ้าของ' },
         { name:'Net Debt / EBITDA', val: ebitdaNeg?'ขาดทุน (แย่สุด)':fmtNum(row.net_debt_to_ebitda,{ratio:true}), cls: ebitdaNeg?'bad':(row.net_debt_to_ebitda!=null?(row.net_debt_to_ebitda<=3?'good':'bad'):'neutral'), desc:'ต้องใช้กำไรกี่ปีโดยประมาณเพื่อเคลียร์หนี้สุทธิ' },
-        { name:'Interest-bearing Debt / Total Debt', val: ibShare!=null?(ibShare*100).toFixed(1)+'%':'—', cls: ibShare!=null?(ibShare<=0.5?'good':'bad'):'neutral', desc:'สัดส่วนหนี้ที่ต้องจ่ายดอกเบี้ย' },
+        { name:`Interest-bearing Debt / Total Debt${star}`, val: ibShare!=null?(ibShare*100).toFixed(1)+'%':'—', cls: ibShare!=null?(ibShare<=0.5?'good':'bad'):'neutral', desc:'สัดส่วนหนี้ที่ต้องจ่ายดอกเบี้ย' },
         { name:'Total Debt Trend', val: dTrend.text, cls: dTrend.cls, desc:'หนี้เพิ่มขึ้นหรือลดลงจากอดีต' },
-        { name:'Debt / Asset (หนี้มีภาระดอกเบี้ย)', val: fmtNum(row.ib_debt_to_asset,{ratio:true}), cls: row.ib_debt_to_asset!=null?(row.ib_debt_to_asset<=0.3?'good':'bad'):'neutral', desc:'สินทรัพย์ของบริษัทถูกใช้ค้ำหนี้ที่มีดอกเบี้ยมากแค่ไหน' },
+        { name:`IBD/Assets${star}`, val: fmtNum(ibDebtToAsset,{ratio:true}), cls: ibDebtToAsset!=null?(ibDebtToAsset<=0.3?'good':'bad'):'neutral', desc:'สินทรัพย์ของบริษัทถูกใช้ค้ำหนี้ที่มีดอกเบี้ยมากแค่ไหน' },
       ]},
     { icon:'📊', name:'ความสามารถจ่ายดอกเบี้ย', weight:25, score: row.risk_interest,
       items:[
@@ -369,8 +386,8 @@ function buildRiskCategories(row){
       ]},
     { icon:'💧', name:'Liquidity', weight:10, score: row.risk_liquidity,
       items:[
-        { name:'Current Ratio', val: fmtNum(row.current_ratio,{ratio:true}), cls: row.current_ratio!=null?(row.current_ratio>=1?'good':'bad'):'neutral', desc:'ความสามารถจ่ายหนี้ระยะสั้น' },
-        { name:'Cash / Short-term Debt', val: cashToShortDebt!=null?(cashToShortDebt*100).toFixed(1)+'%':'—', cls: cashToShortDebt!=null?(cashToShortDebt>=0.5?'good':'bad'):'neutral', desc:'เงินสดรองรับหนี้ระยะสั้นได้มากแค่ไหน' },
+        { name:`Current Ratio${star}`, val: fmtNum(curRatio,{ratio:true}), cls: curRatio!=null?(curRatio>=1?'good':'bad'):'neutral', desc:'ความสามารถจ่ายหนี้ระยะสั้น' },
+        { name:`Cash / Short-term Debt${star}`, val: cashToShortDebt!=null?(cashToShortDebt*100).toFixed(1)+'%':'—', cls: cashToShortDebt!=null?(cashToShortDebt>=0.5?'good':'bad'):'neutral', desc:'เงินสดรองรับหนี้ระยะสั้นได้มากแค่ไหน' },
         { name:'Current Assets/Liabilities Trend', val: crTrend.text, cls: crTrend.cls, desc:'สภาพคล่องดีขึ้นหรือแย่ลง' },
       ]},
     { icon:'📈', name:'Profitability', weight:8, score: row.risk_profitability,
@@ -458,14 +475,6 @@ function renderTrendChart(){
   </div>`;
 }
 
-/* ============== Peer comparison (placeholder) ============== */
-function renderPeerPlaceholder(){
-  return `<div class="peer-card">
-    <div class="peer-title">เปรียบเทียบกับธุรกิจเดียวกัน</div>
-    <div class="peer-empty">ยังไม่มีข้อมูลเพียงพอสำหรับเปรียบเทียบกับธุรกิจในกลุ่มเดียวกัน (ฟีเจอร์นี้อยู่ระหว่างพัฒนา)</div>
-  </div>`;
-}
-
 /* ============== Summary metrics grid ============== */
 function pctDelta(cur, prev){
   if (cur==null || prev==null || prev===0) return null;
@@ -519,17 +528,16 @@ function renderSummaryGrid(){
 /* ============== Risk Score full page ============== */
 function renderRiskScorePage(row){
   const cats = buildRiskCategories(row);
+  const qNote = row.risk_score_quarter_label
+    ? `<div class="risk-disclaimer" style="margin-top:-4px; margin-bottom:8px;">* ตัวเลขจากไตรมาส ${row.risk_score_quarter_label}</div>`
+    : '';
   return `
     ${renderRiskScoreHeader(row)}
     ${renderCategorySummary(cats)}
     ${renderTrendChart()}
-    ${renderPeerPlaceholder()}
     ${renderSummaryGrid()}
-    ${renderCategoryDetails(cats)}
-    <div class="risk-disclaimer">
-      Risk Score คำนวณจากตัวเลขงบการเงินล่าสุดด้วยเกณฑ์อย่างง่าย ใช้เพื่อเปรียบเทียบเบื้องต้นเท่านั้น
-      ไม่ใช่การจัดอันดับเครดิตอย่างเป็นทางการ และไม่ใช่คำแนะนำการลงทุน
-    </div>`;
+    ${qNote}
+    ${renderCategoryDetails(cats)}`;
 }
 
 /* ============== หน้าหลัก ============== */
