@@ -50,6 +50,37 @@ def normalize_ticker(raw: str) -> str:
     return t
 
 
+def _get_interest_bearing_debt(balance_df, col):
+    """
+    คำนวณหนี้สินที่มีภาระดอกเบี้ย (IBD) ให้ครบถ้วนที่สุดเท่าที่ yfinance มีข้อมูลให้:
+    - เงินกู้ยืม/หุ้นกู้ระยะสั้น + ระยะยาว
+    - หนี้สินตามสัญญาเช่า (lease liabilities) ทั้งระยะสั้นและระยะยาว
+    คืนค่า (total_ibd, short_term_portion)
+    """
+    # yfinance บางเวอร์ชันให้ field ที่รวมหนี้กู้ยืม+สัญญาเช่าไว้ให้แล้วในตัวเดียว ลองหาก่อน
+    combined_short = _row_get(balance_df, ["Current Debt And Capital Lease Obligation"], col)
+    combined_long = _row_get(balance_df, ["Long Term Debt And Capital Lease Obligation"], col)
+    if combined_short is not None or combined_long is not None:
+        short_total = combined_short or 0
+        long_total = combined_long or 0
+        return (short_total + long_total, short_total)
+
+    # ถ้าไม่มี field รวม ให้ดึงหนี้กู้ยืม/หุ้นกู้ และหนี้สินตามสัญญาเช่าแยกกัน แล้วบวกเอง
+    short_debt = _row_get(balance_df, ["Current Debt", "Short Long Term Debt", "CurrentDebt"], col) or 0
+    long_debt = _row_get(balance_df, ["Long Term Debt", "LongTermDebt"], col) or 0
+    lease_short = _row_get(balance_df, ["Current Capital Lease Obligation", "Capital Lease Obligations"], col) or 0
+    lease_long = _row_get(balance_df, ["Long Term Capital Lease Obligation"], col) or 0
+
+    if not (short_debt or long_debt or lease_short or lease_long):
+        # ทางเลือกสุดท้าย: field รวมของ yfinance เอง (มักรวมสัญญาเช่าไว้แล้วในหลายกรณี)
+        total_debt = _row_get(balance_df, ["Total Debt", "TotalDebt"], col)
+        return (total_debt, None)
+
+    total_short = short_debt + lease_short
+    total_ibd = short_debt + long_debt + lease_short + lease_long
+    return (total_ibd, total_short)
+
+
 def _row_get(df: pd.DataFrame, keys, col):
     """ดึงค่าจาก DataFrame งบการเงินของ yfinance โดยลองหลายชื่อ field เผื่อ Yahoo เปลี่ยนชื่อ"""
     if df is None or df.empty or col not in df.columns:
@@ -85,14 +116,8 @@ def _calc_period_metrics(income_df, balance_df, cashflow_df, col, prev_col=None)
     current_assets = _row_get(balance_df, ["Current Assets", "Total Current Assets", "CurrentAssets"], col)
     current_liabilities = _row_get(balance_df, ["Current Liabilities", "Total Current Liabilities", "CurrentLiabilities"], col)
 
-    short_debt = _row_get(balance_df, ["Current Debt", "Short Long Term Debt", "CurrentDebt"], col) or 0
-    long_debt = _row_get(balance_df, ["Long Term Debt", "LongTermDebt"], col) or 0
-    interest_bearing_debt = None
-    if short_debt or long_debt:
-        interest_bearing_debt = short_debt + long_debt
-    else:
-        total_debt = _row_get(balance_df, ["Total Debt", "TotalDebt"], col)
-        interest_bearing_debt = total_debt
+    interest_bearing_debt, short_debt = _get_interest_bearing_debt(balance_df, col)
+    short_debt = short_debt or 0
 
     cfo = _row_get(cashflow_df, ["Operating Cash Flow", "Total Cash From Operating Activities", "OperatingCashFlow"], col)
     capex = _row_get(cashflow_df, ["Capital Expenditure", "CapitalExpenditure"], col)
@@ -140,12 +165,7 @@ def _calc_period_metrics(income_df, balance_df, cashflow_df, col, prev_col=None)
         if prev_interest_expense is not None:
             prev_interest_expense = abs(prev_interest_expense)
 
-        prev_short_debt = _row_get(balance_df, ["Current Debt", "Short Long Term Debt", "CurrentDebt"], prev_col) or 0
-        prev_long_debt = _row_get(balance_df, ["Long Term Debt", "LongTermDebt"], prev_col) or 0
-        if prev_short_debt or prev_long_debt:
-            prev_interest_bearing_debt = prev_short_debt + prev_long_debt
-        else:
-            prev_interest_bearing_debt = _row_get(balance_df, ["Total Debt", "TotalDebt"], prev_col)
+        prev_interest_bearing_debt, _prev_short_debt = _get_interest_bearing_debt(balance_df, prev_col)
 
         prev_cfo = _row_get(cashflow_df, ["Operating Cash Flow", "Total Cash From Operating Activities", "OperatingCashFlow"], prev_col)
         prev_capex = _row_get(cashflow_df, ["Capital Expenditure", "CapitalExpenditure"], prev_col)
@@ -395,6 +415,35 @@ def fetch_one(ticker_raw: str):
                 "fiscal_label": q_label,
                 **metrics,
             })
+
+    # ---- Hybrid: ใช้ตัวเลขจากงบดุลไตรมาสล่าสุด แทนงบปีล่าสุด สำหรับ Risk Score เฉพาะ 5 ตัวชี้วัด ----
+    # ที่เป็นข้อมูล "ณ จุดเวลา" (point-in-time) เพราะไตรมาสล่าสุดใหม่กว่าปีล่าสุดเสมอ:
+    # IBD/E, IBD/Assets, Current Ratio, Interest-bearing Debt/Total Debt, Cash/Short-term Debt
+    # (ตัวชี้วัดที่เป็น "ตัวเลขไหล" เช่น EBITDA, CFO, กำไรสุทธิ ยังคงใช้ฐานรายปีเหมือนเดิม เพราะ 1 ไตรมาสเทียบเกณฑ์รายปีตรงๆ ไม่ได้)
+    annual_list = [r for r in rows if r["period_type"] == "annual"]
+    quarterly_list = [r for r in rows if r["period_type"] == "quarterly"]
+    if annual_list and quarterly_list:
+        latest_annual = max(annual_list, key=lambda r: r["period_end"])
+        latest_quarterly = max(quarterly_list, key=lambda r: r["period_end"])
+        if latest_quarterly["period_end"] > latest_annual["period_end"]:
+            hybrid = dict(latest_annual)
+            for k in ["ib_de_ratio", "ib_debt_to_asset", "current_ratio",
+                      "interest_bearing_debt", "total_liabilities",
+                      "cash_and_equivalents", "short_term_debt"]:
+                hybrid[k] = latest_quarterly.get(k)
+            risk = _calc_risk_score(hybrid)
+            latest_annual["risk_ib_de_ratio"] = latest_quarterly.get("ib_de_ratio")
+            latest_annual["risk_ib_debt_to_asset"] = latest_quarterly.get("ib_debt_to_asset")
+            latest_annual["risk_current_ratio"] = latest_quarterly.get("current_ratio")
+            latest_annual["risk_interest_bearing_debt"] = latest_quarterly.get("interest_bearing_debt")
+            latest_annual["risk_total_liabilities"] = latest_quarterly.get("total_liabilities")
+            latest_annual["risk_cash_and_equivalents"] = latest_quarterly.get("cash_and_equivalents")
+            latest_annual["risk_short_term_debt"] = latest_quarterly.get("short_term_debt")
+            latest_annual["risk_score_quarter_label"] = latest_quarterly.get("fiscal_label")
+            latest_annual["risk_score"] = risk["risk_score"]
+            latest_annual["risk_leverage"] = risk["risk_leverage"]
+            latest_annual["risk_liquidity"] = risk["risk_liquidity"]
+            # risk_interest / risk_cashflow / risk_profitability / risk_growth ใช้ฐานรายปีเดิม ไม่แตะต้อง
 
     return rows
 
