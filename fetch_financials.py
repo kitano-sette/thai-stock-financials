@@ -207,6 +207,8 @@ def _calc_period_metrics(income_df, balance_df, cashflow_df, col, prev_col=None)
         "fcf_trend": fcf_trend,
         "current_ratio_trend": current_ratio_trend,
         "net_profit_trend": net_profit_trend,
+        "ib_de_ratio": None,       # จะถูกเติมค่าจริงหลังเรียก _calc_risk_score ด้านล่าง
+        "ib_debt_to_asset": None,
     }
 
     risk = _calc_risk_score(raw)
@@ -250,7 +252,11 @@ def _calc_risk_score(m):
     Leverage 30% / Interest Coverage 25% / Cash Flow 22% / Liquidity 10% / Profitability 8% / Growth 5%
     เกณฑ์ตัวเลข (good/bad) เป็นเกณฑ์อย่างง่ายที่ปรับได้ ใช้อ้างอิงเชิงเปรียบเทียบ ไม่ใช่มาตรฐานสถาบันจัดอันดับ
     """
-    debt_to_asset = (m["total_liabilities"] / m["total_assets"]) if (m["total_liabilities"] is not None and m["total_assets"]) else None
+    # ทางเลือกที่ 1: ใช้ "หนี้สินที่มีภาระดอกเบี้ย" แทน "หนี้สินรวม" ในการให้คะแนน D/E และ Debt/Asset
+    # เพราะหนี้สินรวมของบางธุรกิจ (สถาบันการเงิน/ประกัน/รับเงินล่วงหน้าลูกค้า) ไม่ได้สะท้อนความเสี่ยงทางการเงินจริง
+    ib_de_ratio = (m["interest_bearing_debt"] / m["total_equity"]) if (m["interest_bearing_debt"] is not None and m["total_equity"]) else None
+    ib_debt_to_asset = (m["interest_bearing_debt"] / m["total_assets"]) if (m["interest_bearing_debt"] is not None and m["total_assets"]) else None
+
     ib_debt_share = (m["interest_bearing_debt"] / m["total_liabilities"]) if (m["interest_bearing_debt"] is not None and m["total_liabilities"]) else None
     ebitda_interest = (m["ebitda"] / m["interest_expense"]) if (m["ebitda"] is not None and m["interest_expense"]) else None
     cfo_margin = (m["cfo"] / m["revenue"]) if (m["cfo"] is not None and m["revenue"]) else None
@@ -261,19 +267,24 @@ def _calc_risk_score(m):
         cash_to_short_debt = m["cash_and_equivalents"] / m["short_term_debt"]
     net_profit_margin = (m["net_income"] / m["revenue"]) if (m["net_income"] is not None and m["revenue"]) else None
 
+    # ---- เงื่อนไขบังคับ: ถ้า EBITDA หรือ กำไรสุทธิ ติดลบ ห้ามนำไปคำนวณอัตราส่วนต่อ ----
+    # ให้คะแนนช่องที่เกี่ยวข้องเป็น 0 (แย่ที่สุด) ทันที แทนการปล่อยให้เครื่องหมายลบไปพลิกทิศทางของอัตราส่วน
+    ebitda_is_negative = m["ebitda"] is not None and m["ebitda"] < 0
+    net_income_is_negative = m["net_income"] is not None and m["net_income"] < 0
+
     # ---- 1) Leverage 30% ----
     leverage = _weighted_avg([
-        (_scale(m["de_ratio"], bad=3.0, good=0.5), 10),
-        (_scale(m["net_debt_to_ebitda"], bad=6.0, good=0.0), 8),
+        (_scale(ib_de_ratio, bad=2.0, good=0.3), 10),
+        (0.0 if ebitda_is_negative else _scale(m["net_debt_to_ebitda"], bad=6.0, good=0.0), 8),
         (_scale(ib_debt_share, bad=0.9, good=0.2), 6),
         (_trend_score(m["debt_trend"], good_dir="down"), 4),
-        (_scale(debt_to_asset, bad=0.8, good=0.3), 2),
+        (_scale(ib_debt_to_asset, bad=0.6, good=0.15), 2),
     ])
 
     # ---- 2) Interest Coverage 25% ----
     interest_cov = _weighted_avg([
         (_scale(m["interest_coverage_ratio"], bad=1.0, good=10.0), 12),
-        (_scale(ebitda_interest, bad=2.0, good=15.0), 6),
+        (0.0 if ebitda_is_negative else _scale(ebitda_interest, bad=2.0, good=15.0), 6),
         (_scale(m["interest_coverage_ratio"], bad=1.0, good=10.0), 4),  # EBIT/Interest = สูตรเดียวกับ Interest Coverage Ratio
         (_trend_score(m["interest_expense_trend"], good_dir="down"), 3),
     ])
@@ -296,8 +307,8 @@ def _calc_risk_score(m):
     # ---- 5) Profitability 8% ----
     profitability = _weighted_avg([
         (_scale(net_profit_margin, bad=0.0, good=0.15), 2.5),
-        (_scale(m["roa"], bad=0.0, good=10.0), 2),
-        (_scale(m["roe"], bad=0.0, good=15.0), 1.5),
+        (0.0 if net_income_is_negative else _scale(m["roa"], bad=0.0, good=10.0), 2),
+        (0.0 if net_income_is_negative else _scale(m["roe"], bad=0.0, good=15.0), 1.5),
         (_trend_score(m["net_profit_trend"], good_dir="up"), 2),
     ])
 
@@ -321,57 +332,69 @@ def _calc_risk_score(m):
         "risk_liquidity": round(liquidity, 1) if liquidity is not None else None,
         "risk_profitability": round(profitability, 1) if profitability is not None else None,
         "risk_growth": round(growth, 1) if growth is not None else None,
+        "ib_de_ratio": ib_de_ratio,
+        "ib_debt_to_asset": ib_debt_to_asset,
     }
 
 
 def fetch_one(ticker_raw: str):
-    """ดึงและคำนวณข้อมูลปีล่าสุด + ไตรมาสล่าสุด ของหุ้น 1 ตัว -> คืนค่า list ของ dict (พร้อมส่งเข้า Supabase)"""
+    """
+    ดึงและคำนวณข้อมูลของหุ้น 1 ตัว -> คืนค่า list ของ dict (พร้อมส่งเข้า Supabase)
+    เก็บ "ทุกงวดย้อนหลัง" ที่ Yahoo Finance มีให้ (ปกติรายปีย้อนได้ ~4 ปี, รายไตรมาสย้อนได้ ~4-5 ไตรมาส)
+    ไม่ใช่แค่งวดล่าสุด เพื่อให้กราฟแนวโน้มคะแนนย้อนหลังใช้งานได้ทันทีโดยไม่ต้องรอสะสมข้อมูลข้ามปี
+    """
     ticker = normalize_ticker(ticker_raw)
     tk = yf.Ticker(ticker)
 
     company_name = None
+    industry = None
     try:
         info = tk.info
         company_name = info.get("longName") or info.get("shortName")
+        industry = info.get("industry") or info.get("sector")
     except Exception:
         pass
 
     rows = []
 
-    # ---- รายปี (annual) ----
+    # ---- รายปี (annual) - เก็บทุกปีที่คำนวณ trend/growth ได้ (ต้องมีปีก่อนหน้าเทียบอย่างน้อย 1 ปี) ----
     income_a, balance_a, cash_a = tk.financials, tk.balance_sheet, tk.cashflow
     if income_a is not None and not income_a.empty:
-        cols = list(income_a.columns)
-        latest_col = cols[0]
-        prev_col = cols[1] if len(cols) > 1 else None
-        metrics = _calc_period_metrics(income_a, balance_a, cash_a, latest_col, prev_col)
-        period_end = latest_col.date().isoformat() if hasattr(latest_col, "date") else str(latest_col)
-        rows.append({
-            "ticker": ticker,
-            "company_name": company_name,
-            "period_type": "annual",
-            "period_end": period_end,
-            "fiscal_label": f"FY{latest_col.year}" if hasattr(latest_col, "year") else "FY",
-            **metrics,
-        })
+        cols = list(income_a.columns)  # เรียงจากล่าสุด -> เก่าสุด
+        for i in range(len(cols)):
+            col = cols[i]
+            prev_col = cols[i + 1] if i + 1 < len(cols) else None
+            metrics = _calc_period_metrics(income_a, balance_a, cash_a, col, prev_col)
+            period_end = col.date().isoformat() if hasattr(col, "date") else str(col)
+            rows.append({
+                "ticker": ticker,
+                "company_name": company_name,
+                "industry": industry,
+                "period_type": "annual",
+                "period_end": period_end,
+                "fiscal_label": f"FY{col.year}" if hasattr(col, "year") else "FY",
+                **metrics,
+            })
 
-    # ---- รายไตรมาสล่าสุด (quarterly) ----
+    # ---- รายไตรมาส - เก็บทุกไตรมาสที่คำนวณได้เช่นกัน ----
     income_q, balance_q, cash_q = tk.quarterly_financials, tk.quarterly_balance_sheet, tk.quarterly_cashflow
     if income_q is not None and not income_q.empty:
         cols = list(income_q.columns)
-        latest_col = cols[0]
-        prev_col = cols[1] if len(cols) > 1 else None
-        metrics = _calc_period_metrics(income_q, balance_q, cash_q, latest_col, prev_col)
-        period_end = latest_col.date().isoformat() if hasattr(latest_col, "date") else str(latest_col)
-        q_label = f"Q{((latest_col.month - 1) // 3) + 1}/{latest_col.year}" if hasattr(latest_col, "month") else "Q"
-        rows.append({
-            "ticker": ticker,
-            "company_name": company_name,
-            "period_type": "quarterly",
-            "period_end": period_end,
-            "fiscal_label": q_label,
-            **metrics,
-        })
+        for i in range(len(cols)):
+            col = cols[i]
+            prev_col = cols[i + 1] if i + 1 < len(cols) else None
+            metrics = _calc_period_metrics(income_q, balance_q, cash_q, col, prev_col)
+            period_end = col.date().isoformat() if hasattr(col, "date") else str(col)
+            q_label = f"Q{((col.month - 1) // 3) + 1}/{col.year}" if hasattr(col, "month") else "Q"
+            rows.append({
+                "ticker": ticker,
+                "company_name": company_name,
+                "industry": industry,
+                "period_type": "quarterly",
+                "period_end": period_end,
+                "fiscal_label": q_label,
+                **metrics,
+            })
 
     return rows
 
