@@ -10,41 +10,35 @@
 <script src="config.js"></script>
 <style>
   :root{
-    --bg:#faf5ea; --panel:#ffffff; --border:#e9dfc8;
-    --text:#3c2c1e; --muted:#8a7358;
+    --bg:#f4f6fa; --panel:#ffffff; --border:#e7ebf1;
+    --text:#28303d; --muted:#7c8798;
     --brown-dark:#4a2f22; --brown-mid:#6e4430;
-    --gold:#d1a02c; --gold-light:#f3c93a; --gold-bg:#fff2c2;
-    --good:#2e7d46; --bad:#c0392b; --warn:#c9821f;
+    --gold:#d1a02c; --gold-light:#f3c93a;
+    --good:#2e9e5b; --bad:#e0453c; --warn:#f0a02a;
   }
   *{box-sizing:border-box;}
-  body{
-    margin:0; font-family:'Prompt',sans-serif; background:var(--bg); color:var(--text);
-    min-height:100vh;
-  }
+  body{ margin:0; font-family:'Prompt',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
   header{
-    padding:34px 20px 26px; text-align:center;
+    padding:30px 20px 24px; text-align:center;
     background:linear-gradient(135deg,var(--brown-dark),var(--brown-mid) 60%, #8a5a3a);
-    box-shadow:0 4px 18px rgba(74,47,34,0.25);
   }
-  header h1{margin:0 0 6px; font-size:23px; font-weight:700; color:#fff;}
-  header p{margin:0; color:#e8d9c2; font-size:13px;}
-  .search-wrap{
-    max-width:520px; margin:-22px auto 0; padding:0 16px; display:flex; gap:8px; position:relative; z-index:2;
-  }
+  header h1{margin:0 0 6px; font-size:22px; font-weight:700; color:#fff;}
+  header p{margin:0; color:#e8d9c2; font-size:12.5px;}
+  .search-wrap{ max-width:520px; margin:-20px auto 0; padding:0 16px; display:flex; gap:8px; position:relative; z-index:2; }
   #tickerInput{
-    flex:1; padding:15px 18px; border-radius:12px; border:1px solid var(--border);
-    background:var(--panel); color:var(--text); font-size:16px; font-family:inherit;
-    outline:none; box-shadow:0 6px 16px rgba(74,47,34,0.15);
+    flex:1; padding:14px 16px; border-radius:12px; border:1px solid var(--border);
+    background:var(--panel); color:var(--text); font-size:16px; font-family:inherit; outline:none;
+    box-shadow:0 6px 16px rgba(74,47,34,0.15);
   }
   #tickerInput:focus{border-color:var(--gold);}
   #searchBtn{
-    padding:15px 22px; border-radius:12px; border:none;
+    padding:14px 20px; border-radius:12px; border:none;
     background:linear-gradient(135deg,var(--gold-light),var(--gold));
     color:#4a2f16; font-weight:700; font-size:15px; cursor:pointer;
     box-shadow:0 6px 16px rgba(209,160,44,0.35);
   }
   #searchBtn:disabled{opacity:.6; cursor:default;}
-  main{max-width:600px; margin:0 auto; padding:32px 16px 60px;}
+  main{max-width:600px; margin:0 auto; padding:26px 14px 60px;}
   #status{text-align:center; color:var(--muted); font-size:14px; margin:24px 0; min-height:20px;}
   .spinner{
     width:22px; height:22px; border:3px solid var(--border); border-top-color:var(--gold);
@@ -52,77 +46,96 @@
     animation:spin 0.8s linear infinite;
   }
   @keyframes spin{to{transform:rotate(360deg);}}
-  .company-header{
-    margin:8px 0 6px; background:var(--panel); border:1px solid var(--border); border-radius:14px;
-    padding:18px 22px; box-shadow:0 3px 10px rgba(74,47,34,0.06);
-  }
-  .company-header h2{margin:0; font-size:21px; color:var(--brown-dark);}
-  .company-header h2 span{color:var(--muted); font-weight:400; font-size:15px;}
-  .company-header .updated{color:var(--muted); font-size:12px; margin-top:4px; display:block;}
-  .tabs{display:flex; gap:8px; margin:18px 0 6px; flex-wrap:wrap;}
-  .tab{
-    padding:10px 16px; border-radius:10px; background:var(--panel); border:1px solid var(--border);
-    color:var(--brown-mid); cursor:pointer; font-size:13.5px; font-family:inherit; font-weight:500;
-  }
-  .tab.active{
-    background:linear-gradient(135deg,var(--gold-light),var(--gold));
-    color:#4a2f16; border-color:var(--gold); font-weight:700;
-  }
-  .grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(210px,1fr)); gap:14px; margin-top:14px;}
-  .card{
-    background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:16px 18px;
-    box-shadow:0 3px 10px rgba(74,47,34,0.05);
-  }
-  .card .label{font-size:12.5px; color:var(--muted); margin-bottom:8px; font-weight:500;}
-  .card .value{font-size:20px; font-weight:700; color:var(--brown-dark);}
-  .card .value.good{color:var(--good);}
-  .card .value.bad{color:var(--bad);}
-  footer{text-align:center; color:var(--muted); font-size:12px; padding:26px 20px; border-top:1px solid var(--border); margin-top:20px;}
   .error-box{
     max-width:520px; margin:20px auto; padding:14px 16px; border-radius:10px;
     background:#fdecea; border:1px solid #f3b3ac; color:var(--bad); font-size:14px; text-align:center;
   }
 
-  /* ---------- Risk Score page ---------- */
-  .risk-gauge-wrap{ text-align:center; padding:20px 0 6px; }
-  .risk-gauge{ width:190px; height:190px; margin:0 auto; position:relative; }
-  .risk-gauge svg{ width:100%; height:100%; transform:rotate(-90deg); }
-  .risk-gauge-num{
-    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
-  }
-  .risk-gauge-num .score{ font-size:42px; font-weight:800; color:var(--brown-dark); line-height:1; }
-  .risk-gauge-num .outof{ font-size:12px; color:var(--muted); margin-top:2px; }
-  .risk-level{
-    display:inline-block; margin-top:10px; padding:6px 18px; border-radius:20px; font-weight:700; font-size:14px;
-  }
-  .risk-level.low{ background:#e5f5ea; color:var(--good); }
-  .risk-level.mid{ background:#fdf1de; color:var(--warn); }
-  .risk-level.high{ background:#fdeceb; color:var(--bad); }
+  /* ---- header card ---- */
+  .co-card{ background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:16px 18px; margin-bottom:12px; }
+  .co-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .co-name{ font-size:18px; font-weight:700; color:var(--brown-dark); }
+  .co-badge{ display:inline-block; background:#f0e9d8; color:var(--brown-mid); font-size:11px; font-weight:700; padding:2px 9px; border-radius:20px; margin-left:6px; vertical-align:middle; }
+  .co-industry{ font-size:12.5px; color:var(--muted); margin-top:2px; }
+  .co-date{ font-size:11px; color:var(--muted); white-space:nowrap; text-align:right; }
 
-  .risk-cat{
-    background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:16px 18px;
-    margin-top:14px; box-shadow:0 3px 10px rgba(74,47,34,0.05);
+  /* ---- tabs ---- */
+  .tabs{display:flex; gap:8px; margin:12px 0; flex-wrap:wrap;}
+  .tab{
+    padding:9px 15px; border-radius:10px; background:var(--panel); border:1px solid var(--border);
+    color:var(--brown-mid); cursor:pointer; font-size:13px; font-family:inherit; font-weight:500;
   }
-  .risk-cat-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
-  .risk-cat-head .name{ font-weight:700; font-size:15px; color:var(--brown-dark); }
-  .risk-cat-head .weight{ font-size:12px; color:var(--muted); }
-  .risk-cat-score{ font-size:13px; font-weight:700; color:var(--brown-mid); margin-bottom:8px; }
-  .risk-bar-track{ background:#f0e9d8; border-radius:8px; height:9px; overflow:hidden; margin-bottom:12px; }
-  .risk-bar-fill{ height:100%; border-radius:8px; background:linear-gradient(90deg,var(--gold-light),var(--gold)); }
-  .risk-item{
-    display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-top:1px dashed var(--border);
-  }
-  .risk-item:first-of-type{ border-top:none; }
-  .risk-item .ri-left{ flex:1; }
-  .risk-item .ri-name{ font-size:13.5px; font-weight:600; color:var(--text); }
-  .risk-item .ri-desc{ font-size:12px; color:var(--muted); margin-top:2px; line-height:1.5; }
-  .risk-item .ri-val{ font-size:14px; font-weight:700; white-space:nowrap; padding-top:1px; }
-  .ri-val.good{ color:var(--good); }
-  .ri-val.bad{ color:var(--bad); }
-  .ri-val.neutral{ color:var(--brown-mid); }
-  .risk-disclaimer{
-    font-size:11.5px; color:var(--muted); text-align:center; margin-top:16px; line-height:1.6; padding:0 8px;
-  }
+  .tab.active{ background:linear-gradient(135deg,var(--gold-light),var(--gold)); color:#4a2f16; border-color:var(--gold); font-weight:700; }
+
+  /* ---- gauge card ---- */
+  .gauge-card{ background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:18px 18px 20px; margin-bottom:12px; text-align:center;}
+  .gauge-title{ font-weight:700; font-size:15px; color:var(--brown-dark); margin-bottom:6px; text-align:left;}
+  .gauge-wrap{ position:relative; width:220px; height:130px; margin:6px auto 0; }
+  .gauge-wrap svg{ width:100%; height:100%; overflow:visible; }
+  .gauge-score{ font-size:44px; font-weight:800; color:var(--brown-dark); line-height:1; margin-top:2px; }
+  .gauge-sub{ font-size:12.5px; color:var(--muted); margin-top:2px; }
+  .gauge-level{ font-size:17px; font-weight:700; margin-top:2px; }
+  .gauge-level.low{ color:var(--good); } .gauge-level.mid{ color:var(--warn); } .gauge-level.high{ color:var(--bad); }
+  .gauge-desc{ font-size:12px; color:var(--muted); margin-top:8px; line-height:1.7; padding:0 6px; }
+  .band-row{ display:flex; gap:6px; margin-top:14px; }
+  .band{ flex:1; border-radius:10px; padding:7px 4px; text-align:center; font-size:10.5px; font-weight:600; opacity:.45; }
+  .band.active{ opacity:1; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+  .band.b1{ background:#fdecea; color:var(--bad); }
+  .band.b2{ background:#fdf1de; color:var(--warn); }
+  .band.b3{ background:#fdf8de; color:#b08a1a; }
+  .band.b4{ background:#e7f7ed; color:var(--good); }
+  .band .rng{ display:block; font-size:9.5px; opacity:.8; margin-top:1px; }
+
+  /* ---- category summary list ---- */
+  .cat-summary-card{ background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:16px 18px; margin-bottom:12px; }
+  .cat-summary-title{ font-weight:700; font-size:15px; color:var(--brown-dark); margin-bottom:12px; }
+  .cat-row{ display:flex; align-items:center; gap:10px; padding:9px 0; }
+  .cat-icon{ font-size:18px; width:30px; text-align:center; flex-shrink:0; }
+  .cat-mid{ flex:1; min-width:0; }
+  .cat-mid-top{ display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:5px; }
+  .cat-mid-top .nm{ font-weight:600; color:var(--text); }
+  .cat-mid-top .wt{ color:var(--muted); }
+  .cat-bar-track{ background:#eef1f6; border-radius:8px; height:7px; overflow:hidden; }
+  .cat-bar-fill{ height:100%; border-radius:8px; }
+  .cat-score{ font-size:15px; font-weight:800; width:52px; text-align:right; flex-shrink:0; }
+
+  /* ---- detail breakdown ---- */
+  .risk-cat{ background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:14px 18px; margin-bottom:10px; }
+  .risk-cat-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; }
+  .risk-cat-head .name{ font-weight:700; font-size:13.5px; color:var(--brown-dark); }
+  .risk-cat-head .weight{ font-size:11px; color:var(--muted); }
+  .risk-item{ display:flex; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px dashed var(--border); }
+  .risk-item:first-of-type{ border-top:none; margin-top:6px; }
+  .risk-item .ri-name{ font-size:12.5px; font-weight:600; color:var(--text); }
+  .risk-item .ri-desc{ font-size:11px; color:var(--muted); margin-top:1px; line-height:1.5; }
+  .risk-item .ri-val{ font-size:13px; font-weight:700; white-space:nowrap; padding-top:1px; }
+  .ri-val.good{ color:var(--good); } .ri-val.bad{ color:var(--bad); } .ri-val.neutral{ color:var(--brown-mid); }
+
+  /* ---- trend chart ---- */
+  .trend-card{ background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:16px 18px; margin-bottom:12px; }
+  .trend-title{ font-weight:700; font-size:15px; color:var(--brown-dark); margin-bottom:10px; }
+  .trend-empty{ font-size:12.5px; color:var(--muted); text-align:center; padding:20px 0; }
+
+  /* ---- peer placeholder ---- */
+  .peer-card{ background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:16px 18px; margin-bottom:12px; }
+  .peer-title{ font-weight:700; font-size:15px; color:var(--brown-dark); margin-bottom:8px; }
+  .peer-empty{ font-size:12px; color:var(--muted); text-align:center; padding:14px 8px; background:#f8f9fb; border-radius:10px; }
+
+  /* ---- summary metrics grid ---- */
+  .summary-card{ background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:16px 14px; margin-bottom:12px; }
+  .summary-title{ font-weight:700; font-size:15px; color:var(--brown-dark); margin-bottom:12px; padding:0 4px;}
+  .summary-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  .sm-box{ background:#f8f9fb; border-radius:12px; padding:12px 12px 10px; text-align:center; }
+  .sm-label{ font-size:11px; color:var(--muted); margin-bottom:4px; height:28px; display:flex; align-items:center; justify-content:center; line-height:1.3;}
+  .sm-value{ font-size:17px; font-weight:800; color:var(--brown-dark); }
+  .sm-unit{ font-size:10px; color:var(--muted); margin-bottom:6px; }
+  .sm-bars{ display:flex; align-items:flex-end; justify-content:center; gap:3px; height:22px; margin:6px 0; }
+  .sm-bars .b{ width:9px; background:#cdd6e3; border-radius:2px; }
+  .sm-yoy{ font-size:10.5px; font-weight:700; margin-top:2px; }
+  .sm-yoy.good{ color:var(--good); } .sm-yoy.bad{ color:var(--bad); } .sm-yoy.neutral{ color:var(--muted); }
+
+  footer{ text-align:center; color:var(--muted); font-size:12px; padding:26px 20px; }
+  .risk-disclaimer{ font-size:11px; color:var(--muted); text-align:center; margin-top:4px; line-height:1.6; padding:0 8px; }
 </style>
 </head>
 <body>
@@ -142,9 +155,7 @@
   <div id="result"></div>
 </main>
 
-<footer>
-  ข้อมูลจาก Yahoo Finance ผ่าน yfinance · ใช้เพื่อการศึกษาเท่านั้น ไม่ใช่คำแนะนำการลงทุน
-</footer>
+<footer>ข้อมูลจาก Yahoo Finance ผ่าน yfinance · ใช้เพื่อการศึกษาเท่านั้น ไม่ใช่คำแนะนำการลงทุน</footer>
 
 <script>
 const cfg = window.APP_CONFIG;
@@ -157,7 +168,7 @@ const els = {
   result: document.getElementById('result'),
 };
 
-let currentTab = 'risk';   // หน้า Risk Score เป็นหน้าหลัก (default) เสมอ
+let currentTab = 'risk';
 let currentRows = [];
 let pollTimer = null;
 
@@ -166,6 +177,11 @@ function normalizeTicker(raw){
   if (t && !t.includes('.')) t = t + '.BK';
   return t;
 }
+function byDateDesc(a,b){ return new Date(b.period_end) - new Date(a.period_end); }
+function annualRows(){ return currentRows.filter(r=>r.period_type==='annual').sort(byDateDesc); }
+function quarterlyRows(){ return currentRows.filter(r=>r.period_type==='quarterly').sort(byDateDesc); }
+function latestAnnual(){ return annualRows()[0]; }
+function latestQuarterly(){ return quarterlyRows()[0]; }
 
 function fmtNum(v, opts={}){
   if (v === null || v === undefined || Number.isNaN(v)) return '—';
@@ -180,11 +196,16 @@ function fmtNum(v, opts={}){
   }
   return v;
 }
-
 function colorClass(v, goodIfHigh=true){
   if (v === null || v === undefined) return '';
   if (goodIfHigh) return v >= 0 ? 'good' : 'bad';
   return v <= 1 ? 'good' : 'bad';
+}
+const THAI_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+function thaiDate(iso){
+  if (!iso) return '-';
+  const d = new Date(iso);
+  return `${d.getDate()} ${THAI_MONTHS[d.getMonth()]} ${d.getFullYear()+543}`;
 }
 
 const METRIC_DEFS = [
@@ -217,12 +238,12 @@ function renderMetrics(row){
     if (def.key === 'net_debt_to_ebitda') cls = (v!==null && v<=3) ? 'good' : (v!==null? 'bad':'');
     if (def.key === 'current_ratio') cls = (v!==null && v>=1) ? 'good' : (v!==null? 'bad':'');
     if (def.key === 'interest_coverage_ratio') cls = (v!==null && v>=3) ? 'good' : (v!==null? 'bad':'');
-    return `<div class="card">
-      <div class="label">${def.label}</div>
-      <div class="value ${cls}">${fmtNum(v, def.fmt)}</div>
+    return `<div class="sm-box" style="text-align:left;">
+      <div class="sm-label" style="justify-content:flex-start; height:auto;">${def.label}</div>
+      <div class="sm-value ${cls}" style="text-align:left;">${fmtNum(v, def.fmt)}</div>
     </div>`;
   }).join('');
-  return `<div class="grid">${cards}</div>`;
+  return `<div class="summary-grid">${cards}</div>`;
 }
 
 function tabLabel(row){
@@ -230,72 +251,92 @@ function tabLabel(row){
   if (row.period_type === 'annual') return `ปีบัญชี: ${row.fiscal_label || '-'}`;
   return `ไตรมาส: ${row.fiscal_label || '-'}`;
 }
-
 function renderTabs(){
-  const annualRow = currentRows.find(r=>r.period_type==='annual');
-  const qRow = currentRows.find(r=>r.period_type==='quarterly');
+  const a = latestAnnual(), q = latestQuarterly();
   return `<div class="tabs">
     <button class="tab ${currentTab==='risk'?'active':''}" data-tab="risk">🎯 Risk Score</button>
-    ${annualRow? `<button class="tab ${currentTab==='annual'?'active':''}" data-tab="annual">${tabLabel(annualRow)}</button>`:''}
-    ${qRow? `<button class="tab ${currentTab==='quarterly'?'active':''}" data-tab="quarterly">${tabLabel(qRow)}</button>`:''}
+    ${a? `<button class="tab ${currentTab==='annual'?'active':''}" data-tab="annual">${tabLabel(a)}</button>`:''}
+    ${q? `<button class="tab ${currentTab==='quarterly'?'active':''}" data-tab="quarterly">${tabLabel(q)}</button>`:''}
   </div>`;
 }
 
-/* ============== Risk Score ============== */
-
+/* ============== Risk Score gauge ============== */
 function riskLevel(score){
-  if (score === null || score === undefined) return { cls:'mid', text:'ไม่มีข้อมูลเพียงพอ' };
-  if (score >= 70) return { cls:'low', text:'ความเสี่ยงต่ำ' };
-  if (score >= 40) return { cls:'mid', text:'ความเสี่ยงปานกลาง' };
-  return { cls:'high', text:'ความเสี่ยงสูง' };
+  if (score === null || score === undefined) return { cls:'mid', text:'ไม่มีข้อมูลเพียงพอ', band:0 };
+  if (score >= 80) return { cls:'low', text:'ความเสี่ยงต่ำ', band:4 };
+  if (score >= 60) return { cls:'mid', text:'ความเสี่ยงปานกลาง', band:3 };
+  if (score >= 40) return { cls:'mid', text:'ความเสี่ยงสูง', band:2 };
+  return { cls:'high', text:'ความเสี่ยงสูงมาก', band:1 };
 }
-
 function gaugeColor(score){
   if (score === null || score === undefined) return '#c9b98a';
-  if (score >= 70) return '#2e7d46';
-  if (score >= 40) return '#c9821f';
-  return '#c0392b';
+  if (score >= 80) return '#2e9e5b';
+  if (score >= 60) return '#c9a51a';
+  if (score >= 40) return '#f0a02a';
+  return '#e0453c';
 }
-
 function renderGauge(score){
-  const r = 80, c = 2 * Math.PI * r;
-  const pct = score === null || score === undefined ? 0 : Math.max(0, Math.min(100, score)) / 100;
-  const offset = c * (1 - pct);
+  const cx=110, cy=110, r=88;
+  const pct = score===null||score===undefined ? 0 : Math.max(0,Math.min(100,score))/100;
+  const theta = Math.PI * (1 - pct);
+  const nx = cx + r*0.82*Math.cos(theta);
+  const ny = cy - r*0.82*Math.sin(theta);
   const color = gaugeColor(score);
   return `
-  <div class="risk-gauge">
-    <svg viewBox="0 0 190 190">
-      <circle cx="95" cy="95" r="${r}" fill="none" stroke="#f0e9d8" stroke-width="16"/>
-      <circle cx="95" cy="95" r="${r}" fill="none" stroke="${color}" stroke-width="16"
-        stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${offset}"/>
+  <div class="gauge-wrap">
+    <svg viewBox="0 0 220 130">
+      <defs>
+        <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#e0453c"/>
+          <stop offset="35%" stop-color="#f0a02a"/>
+          <stop offset="65%" stop-color="#e8c93a"/>
+          <stop offset="100%" stop-color="#2e9e5b"/>
+        </linearGradient>
+      </defs>
+      <path d="M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}" fill="none" stroke="url(#gaugeGrad)" stroke-width="16" stroke-linecap="round"/>
+      <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="#3c2c1e" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="${cx}" cy="${cy}" r="7" fill="#3c2c1e"/>
+      <text x="${cx-r-4}" y="${cy+18}" font-size="10" fill="#8a7358" text-anchor="middle">0</text>
+      <text x="${cx}" y="${cy-r-8}" font-size="10" fill="#8a7358" text-anchor="middle">50</text>
+      <text x="${cx+r+4}" y="${cy+18}" font-size="10" fill="#8a7358" text-anchor="middle">100</text>
     </svg>
-    <div class="risk-gauge-num">
-      <div class="score">${score===null||score===undefined ? '—' : Math.round(score)}</div>
-      <div class="outof">จาก 100</div>
-    </div>
+  </div>`;
+}
+function renderRiskScoreHeader(row){
+  const level = riskLevel(row.risk_score);
+  const descMap = {
+    low:'บริษัทมีความสามารถในการชำระหนี้และดอกเบี้ยอยู่ในระดับดี ควรติดตามแนวโน้มหนี้สินและกระแสเงินสดอย่างต่อเนื่อง',
+    mid:'บริษัทมีความสามารถในการชำระหนี้และดอกเบี้ยอยู่ในระดับปานกลาง ควรติดตามแนวโน้มหนี้สินและกระแสเงินสดอย่างต่อเนื่อง',
+    high:'บริษัทมีความเสี่ยงด้านการชำระหนี้และดอกเบี้ยค่อนข้างสูง ควรติดตามแนวโน้มหนี้สินและกระแสเงินสดอย่างใกล้ชิด',
+  };
+  const bands = [
+    {n:1,label:'เสี่ยงสูงมาก',range:'0-39',cls:'b1'},
+    {n:2,label:'เสี่ยงสูง',range:'40-59',cls:'b2'},
+    {n:3,label:'ปานกลาง',range:'60-79',cls:'b3'},
+    {n:4,label:'เสี่ยงต่ำ',range:'80-100',cls:'b4'},
+  ];
+  const bandRow = bands.map(b=>`<div class="band ${b.cls} ${level.band===b.n?'active':''}">${b.label}<span class="rng">${b.range}</span></div>`).join('');
+  return `
+  <div class="gauge-card">
+    <div class="gauge-title">Bond Risk Score</div>
+    ${renderGauge(row.risk_score)}
+    <div class="gauge-score">${row.risk_score===null||row.risk_score===undefined?'—':Math.round(row.risk_score)}</div>
+    <div class="gauge-sub">ระดับความเสี่ยง</div>
+    <div class="gauge-level ${level.cls}">${level.text}</div>
+    <div class="gauge-desc">${descMap[level.cls] || ''}</div>
+    <div class="band-row">${bandRow}</div>
   </div>`;
 }
 
-function trendText(trend, goodDir){
-  if (!trend) return { text:'—', cls:'neutral' };
-  const map = { up:'เพิ่มขึ้น ▲', down:'ลดลง ▼', flat:'ทรงตัว ▬' };
-  const cls = trend === 'flat' ? 'neutral' : (trend === goodDir ? 'good' : 'bad');
-  return { text: map[trend] || '—', cls };
-}
-
-function valBox(text, cls){
-  return `<div class="ri-val ${cls}">${text}</div>`;
-}
-
+/* ============== Category summary + detail ============== */
 function buildRiskCategories(row){
   const ibShare = (row.interest_bearing_debt!=null && row.total_liabilities) ? row.interest_bearing_debt/row.total_liabilities : null;
-  const debtToAsset = (row.total_liabilities!=null && row.total_assets) ? row.total_liabilities/row.total_assets : null;
-  const ebitdaInterest = (row.ebitda!=null && row.interest_expense) ? row.ebitda/row.interest_expense : null;
-  const cfoMargin = (row.cfo!=null && row.revenue) ? row.cfo/row.revenue*100 : null;
-  const fcfMargin = (row.fcf!=null && row.revenue) ? row.fcf/row.revenue*100 : null;
+  const ebitdaInterest = (row.ebitda!=null && row.ebitda>=0 && row.interest_expense) ? row.ebitda/row.interest_expense : null;
   const cfoToDebt = (row.cfo!=null && row.interest_bearing_debt) ? row.cfo/row.interest_bearing_debt : null;
   const cashToShortDebt = (row.cash_and_equivalents!=null && row.short_term_debt) ? row.cash_and_equivalents/row.short_term_debt : null;
   const netMargin = (row.net_income!=null && row.revenue) ? row.net_income/row.revenue*100 : null;
+  const ebitdaNeg = row.ebitda!=null && row.ebitda < 0;
+  const netIncomeNeg = row.net_income!=null && row.net_income < 0;
 
   const dTrend = trendText(row.debt_trend, 'down');
   const ieTrend = trendText(row.interest_expense_trend, 'down');
@@ -304,142 +345,215 @@ function buildRiskCategories(row){
   const npTrend = trendText(row.net_profit_trend, 'up');
 
   return [
-    {
-      name:'1. Leverage / ภาระหนี้', weight:30, score: row.risk_leverage,
+    { icon:'⚖️', name:'Leverage / ภาระหนี้', weight:30, score: row.risk_leverage,
       items:[
-        { name:'D/E', val: fmtNum(row.de_ratio,{ratio:true}), cls: row.de_ratio!=null ? (row.de_ratio<=1.5?'good':'bad') : 'neutral',
-          desc:'บริษัทมีหนี้มากเมื่อเทียบกับเงินทุนของเจ้าของ' },
-        { name:'Net Debt / EBITDA', val: fmtNum(row.net_debt_to_ebitda,{ratio:true}), cls: row.net_debt_to_ebitda!=null ? (row.net_debt_to_ebitda<=3?'good':'bad') : 'neutral',
-          desc:'ต้องใช้กำไรกี่ปีโดยประมาณเพื่อเคลียร์หนี้สุทธิ' },
-        { name:'Interest-bearing Debt / Total Debt', val: ibShare!=null? (ibShare*100).toFixed(1)+'%':'—', cls: ibShare!=null?(ibShare<=0.5?'good':'bad'):'neutral',
-          desc:'สัดส่วนหนี้ที่ต้องจ่ายดอกเบี้ย' },
-        { name:'Total Debt Trend', val: dTrend.text, cls: dTrend.cls,
-          desc:'หนี้เพิ่มขึ้นหรือลดลงจากอดีต' },
-        { name:'Debt / Asset', val: debtToAsset!=null? (debtToAsset*100).toFixed(1)+'%':'—', cls: debtToAsset!=null?(debtToAsset<=0.5?'good':'bad'):'neutral',
-          desc:'สินทรัพย์ของบริษัทถูกใช้หนี้มากแค่ไหน' },
-      ]
-    },
-    {
-      name:'2. ความสามารถจ่ายดอกเบี้ย', weight:25, score: row.risk_interest,
+        { name:'D/E (หนี้มีภาระดอกเบี้ย)', val: fmtNum(row.ib_de_ratio,{ratio:true}), cls: row.ib_de_ratio!=null?(row.ib_de_ratio<=1?'good':'bad'):'neutral', desc:'บริษัทมีหนี้ที่ต้องจ่ายดอกเบี้ยมากเมื่อเทียบกับเงินทุนของเจ้าของ' },
+        { name:'Net Debt / EBITDA', val: ebitdaNeg?'ขาดทุน (แย่สุด)':fmtNum(row.net_debt_to_ebitda,{ratio:true}), cls: ebitdaNeg?'bad':(row.net_debt_to_ebitda!=null?(row.net_debt_to_ebitda<=3?'good':'bad'):'neutral'), desc:'ต้องใช้กำไรกี่ปีโดยประมาณเพื่อเคลียร์หนี้สุทธิ' },
+        { name:'Interest-bearing Debt / Total Debt', val: ibShare!=null?(ibShare*100).toFixed(1)+'%':'—', cls: ibShare!=null?(ibShare<=0.5?'good':'bad'):'neutral', desc:'สัดส่วนหนี้ที่ต้องจ่ายดอกเบี้ย' },
+        { name:'Total Debt Trend', val: dTrend.text, cls: dTrend.cls, desc:'หนี้เพิ่มขึ้นหรือลดลงจากอดีต' },
+        { name:'Debt / Asset (หนี้มีภาระดอกเบี้ย)', val: fmtNum(row.ib_debt_to_asset,{ratio:true}), cls: row.ib_debt_to_asset!=null?(row.ib_debt_to_asset<=0.3?'good':'bad'):'neutral', desc:'สินทรัพย์ของบริษัทถูกใช้ค้ำหนี้ที่มีดอกเบี้ยมากแค่ไหน' },
+      ]},
+    { icon:'📊', name:'ความสามารถจ่ายดอกเบี้ย', weight:25, score: row.risk_interest,
       items:[
-        { name:'Interest Coverage Ratio', val: fmtNum(row.interest_coverage_ratio,{ratio:true}), cls: row.interest_coverage_ratio!=null?(row.interest_coverage_ratio>=3?'good':'bad'):'neutral',
-          desc:'กำไรเพียงพอจ่ายดอกเบี้ยกี่เท่า' },
-        { name:'EBITDA / Interest', val: fmtNum(ebitdaInterest,{ratio:true}), cls: ebitdaInterest!=null?(ebitdaInterest>=3?'good':'bad'):'neutral',
-          desc:'กระแสกำไรก่อนรายการสำคัญเพียงพอจ่ายดอกเบี้ยแค่ไหน' },
-        { name:'EBIT / Interest', val: fmtNum(row.interest_coverage_ratio,{ratio:true}), cls: row.interest_coverage_ratio!=null?(row.interest_coverage_ratio>=3?'good':'bad'):'neutral',
-          desc:'กำไรจากการดำเนินงานครอบคลุมดอกเบี้ยกี่เท่า' },
-        { name:'Interest Expense Trend', val: ieTrend.text, cls: ieTrend.cls,
-          desc:'ภาระดอกเบี้ยเพิ่มขึ้นหรือลดลง' },
-      ]
-    },
-    {
-      name:'3. Cash Flow', weight:22, score: row.risk_cashflow,
+        { name:'Interest Coverage Ratio', val: fmtNum(row.interest_coverage_ratio,{ratio:true}), cls: row.interest_coverage_ratio!=null?(row.interest_coverage_ratio>=3?'good':'bad'):'neutral', desc:'กำไรเพียงพอจ่ายดอกเบี้ยกี่เท่า' },
+        { name:'EBITDA / Interest', val: ebitdaNeg?'ขาดทุน (แย่สุด)':fmtNum(ebitdaInterest,{ratio:true}), cls: ebitdaNeg?'bad':(ebitdaInterest!=null?(ebitdaInterest>=3?'good':'bad'):'neutral'), desc:'กระแสกำไรก่อนรายการสำคัญเพียงพอจ่ายดอกเบี้ยแค่ไหน' },
+        { name:'EBIT / Interest', val: fmtNum(row.interest_coverage_ratio,{ratio:true}), cls: row.interest_coverage_ratio!=null?(row.interest_coverage_ratio>=3?'good':'bad'):'neutral', desc:'กำไรจากการดำเนินงานครอบคลุมดอกเบี้ยกี่เท่า' },
+        { name:'Interest Expense Trend', val: ieTrend.text, cls: ieTrend.cls, desc:'ภาระดอกเบี้ยเพิ่มขึ้นหรือลดลง' },
+      ]},
+    { icon:'💰', name:'Cash Flow', weight:22, score: row.risk_cashflow,
       items:[
-        { name:'CFO', val: fmtNum(row.cfo,{money:true}), cls: row.cfo!=null?(row.cfo>=0?'good':'bad'):'neutral',
-          desc:'เงินสดที่ธุรกิจหลักสร้างได้จริง' },
-        { name:'FCF', val: fmtNum(row.fcf,{money:true}), cls: row.fcf!=null?(row.fcf>=0?'good':'bad'):'neutral',
-          desc:'เงินสดที่เหลือหลังหักเงินลงทุน' },
-        { name:'CFO / Debt', val: cfoToDebt!=null? (cfoToDebt*100).toFixed(1)+'%':'—', cls: cfoToDebt!=null?(cfoToDebt>=0.2?'good':'bad'):'neutral',
-          desc:'เงินสดจากธุรกิจเพียงพอรองรับหนี้แค่ไหน' },
-        { name:'FCF Trend', val: fcfTrend.text, cls: fcfTrend.cls,
-          desc:'เงินสดเหลือหลังลงทุนดีขึ้นหรือแย่ลง' },
-      ]
-    },
-    {
-      name:'4. Liquidity', weight:10, score: row.risk_liquidity,
+        { name:'CFO', val: fmtNum(row.cfo,{money:true}), cls: row.cfo!=null?(row.cfo>=0?'good':'bad'):'neutral', desc:'เงินสดที่ธุรกิจหลักสร้างได้จริง' },
+        { name:'FCF', val: fmtNum(row.fcf,{money:true}), cls: row.fcf!=null?(row.fcf>=0?'good':'bad'):'neutral', desc:'เงินสดที่เหลือหลังหักเงินลงทุน' },
+        { name:'CFO / Debt', val: cfoToDebt!=null?(cfoToDebt*100).toFixed(1)+'%':'—', cls: cfoToDebt!=null?(cfoToDebt>=0.2?'good':'bad'):'neutral', desc:'เงินสดจากธุรกิจเพียงพอรองรับหนี้แค่ไหน' },
+        { name:'FCF Trend', val: fcfTrend.text, cls: fcfTrend.cls, desc:'เงินสดเหลือหลังลงทุนดีขึ้นหรือแย่ลง' },
+      ]},
+    { icon:'💧', name:'Liquidity', weight:10, score: row.risk_liquidity,
       items:[
-        { name:'Current Ratio', val: fmtNum(row.current_ratio,{ratio:true}), cls: row.current_ratio!=null?(row.current_ratio>=1?'good':'bad'):'neutral',
-          desc:'ความสามารถจ่ายหนี้ระยะสั้น' },
-        { name:'Cash / Short-term Debt', val: cashToShortDebt!=null? (cashToShortDebt*100).toFixed(1)+'%':'—', cls: cashToShortDebt!=null?(cashToShortDebt>=0.5?'good':'bad'):'neutral',
-          desc:'เงินสดรองรับหนี้ระยะสั้นได้มากแค่ไหน' },
-        { name:'Current Assets/Liabilities Trend', val: crTrend.text, cls: crTrend.cls,
-          desc:'สภาพคล่องดีขึ้นหรือแย่ลง' },
-      ]
-    },
-    {
-      name:'5. Profitability', weight:8, score: row.risk_profitability,
+        { name:'Current Ratio', val: fmtNum(row.current_ratio,{ratio:true}), cls: row.current_ratio!=null?(row.current_ratio>=1?'good':'bad'):'neutral', desc:'ความสามารถจ่ายหนี้ระยะสั้น' },
+        { name:'Cash / Short-term Debt', val: cashToShortDebt!=null?(cashToShortDebt*100).toFixed(1)+'%':'—', cls: cashToShortDebt!=null?(cashToShortDebt>=0.5?'good':'bad'):'neutral', desc:'เงินสดรองรับหนี้ระยะสั้นได้มากแค่ไหน' },
+        { name:'Current Assets/Liabilities Trend', val: crTrend.text, cls: crTrend.cls, desc:'สภาพคล่องดีขึ้นหรือแย่ลง' },
+      ]},
+    { icon:'📈', name:'Profitability', weight:8, score: row.risk_profitability,
       items:[
-        { name:'Net Profit Margin', val: netMargin!=null? netMargin.toFixed(1)+'%':'—', cls: netMargin!=null?(netMargin>=0?'good':'bad'):'neutral',
-          desc:'จากรายได้ 100 บาท เหลือกำไรเท่าไร' },
-        { name:'ROA', val: fmtNum(row.roa,{pct:true}), cls: row.roa!=null?(row.roa>=0?'good':'bad'):'neutral',
-          desc:'ใช้สินทรัพย์สร้างกำไรได้มีประสิทธิภาพแค่ไหน' },
-        { name:'ROE', val: fmtNum(row.roe,{pct:true}), cls: row.roe!=null?(row.roe>=0?'good':'bad'):'neutral',
-          desc:'เงินทุนของเจ้าของสร้างกำไรได้ดีแค่ไหน' },
-        { name:'Net Profit Trend', val: npTrend.text, cls: npTrend.cls,
-          desc:'กำไรเพิ่มขึ้นหรือลดลง' },
-      ]
-    },
-    {
-      name:'6. Growth', weight:5, score: row.risk_growth,
+        { name:'Net Profit Margin', val: netMargin!=null?netMargin.toFixed(1)+'%':'—', cls: netMargin!=null?(netMargin>=0?'good':'bad'):'neutral', desc:'จากรายได้ 100 บาท เหลือกำไรเท่าไร' },
+        { name:'ROA', val: netIncomeNeg?'ขาดทุน (แย่สุด)':fmtNum(row.roa,{pct:true}), cls: netIncomeNeg?'bad':(row.roa!=null?(row.roa>=0?'good':'bad'):'neutral'), desc:'ใช้สินทรัพย์สร้างกำไรได้มีประสิทธิภาพแค่ไหน' },
+        { name:'ROE', val: netIncomeNeg?'ขาดทุน (แย่สุด)':fmtNum(row.roe,{pct:true}), cls: netIncomeNeg?'bad':(row.roe!=null?(row.roe>=0?'good':'bad'):'neutral'), desc:'เงินทุนของเจ้าของสร้างกำไรได้ดีแค่ไหน' },
+        { name:'Net Profit Trend', val: npTrend.text, cls: npTrend.cls, desc:'กำไรเพิ่มขึ้นหรือลดลง' },
+      ]},
+    { icon:'🚀', name:'Growth / แนวโน้ม', weight:5, score: row.risk_growth,
       items:[
-        { name:'Revenue Growth', val: fmtNum(row.revenue_growth,{pct:true}), cls: row.revenue_growth!=null?(row.revenue_growth>=0?'good':'bad'):'neutral',
-          desc:'รายได้โตหรือหดตัว' },
-        { name:'EBITDA Growth', val: fmtNum(row.ebitda_growth,{pct:true}), cls: row.ebitda_growth!=null?(row.ebitda_growth>=0?'good':'bad'):'neutral',
-          desc:'กำลังทำกำไรจากธุรกิจโตหรือหดตัว' },
-        { name:'Profit Growth', val: fmtNum(row.earnings_growth,{pct:true}), cls: row.earnings_growth!=null?(row.earnings_growth>=0?'good':'bad'):'neutral',
-          desc:'กำไรสุทธิโตหรือหดตัว' },
-      ]
-    },
+        { name:'Revenue Growth', val: fmtNum(row.revenue_growth,{pct:true}), cls: row.revenue_growth!=null?(row.revenue_growth>=0?'good':'bad'):'neutral', desc:'รายได้โตหรือหดตัว' },
+        { name:'EBITDA Growth', val: fmtNum(row.ebitda_growth,{pct:true}), cls: row.ebitda_growth!=null?(row.ebitda_growth>=0?'good':'bad'):'neutral', desc:'กำลังทำกำไรจากธุรกิจโตหรือหดตัว' },
+        { name:'Profit Growth', val: fmtNum(row.earnings_growth,{pct:true}), cls: row.earnings_growth!=null?(row.earnings_growth>=0?'good':'bad'):'neutral', desc:'กำไรสุทธิโตหรือหดตัว' },
+      ]},
   ];
 }
-
-function renderRiskScore(row){
-  const level = riskLevel(row.risk_score);
-  const cats = buildRiskCategories(row);
-
-  const catHtml = cats.map(cat => {
-    const scoreVal = cat.score!=null ? Math.round(cat.score) : null;
-    const itemsHtml = cat.items.map(it => `
-      <div class="risk-item">
-        <div class="ri-left">
-          <div class="ri-name">${it.name}</div>
-          <div class="ri-desc">${it.desc}</div>
-        </div>
-        ${valBox(it.val, it.cls)}
+function trendText(trend, goodDir){
+  if (!trend) return { text:'—', cls:'neutral' };
+  const map = { up:'เพิ่มขึ้น ▲', down:'ลดลง ▼', flat:'ทรงตัว ▬' };
+  const cls = trend === 'flat' ? 'neutral' : (trend === goodDir ? 'good' : 'bad');
+  return { text: map[trend] || '—', cls };
+}
+function scoreColor(s){
+  if (s===null||s===undefined) return '#c9b98a';
+  if (s>=80) return '#2e9e5b'; if (s>=60) return '#c9a51a'; if (s>=40) return '#f0a02a'; return '#e0453c';
+}
+function renderCategorySummary(cats){
+  const rows = cats.map(c => {
+    const s = c.score!=null ? Math.round(c.score) : null;
+    return `<div class="cat-row">
+      <div class="cat-icon">${c.icon}</div>
+      <div class="cat-mid">
+        <div class="cat-mid-top"><span class="nm">${c.name}</span><span class="wt">น้ำหนัก ${c.weight}%</span></div>
+        <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${s||0}%; background:${scoreColor(s)}"></div></div>
       </div>
-    `).join('');
-    return `
-      <div class="risk-cat">
-        <div class="risk-cat-head">
-          <div class="name">${cat.name}</div>
-          <div class="weight">น้ำหนัก ${cat.weight}%</div>
-        </div>
-        <div class="risk-cat-score">คะแนนหมวดนี้: ${scoreVal!=null? scoreVal+'/100' : 'ไม่มีข้อมูลเพียงพอ'}</div>
-        <div class="risk-bar-track"><div class="risk-bar-fill" style="width:${scoreVal||0}%"></div></div>
-        ${itemsHtml}
-      </div>`;
+      <div class="cat-score" style="color:${scoreColor(s)}">${s!=null? s+'/100':'—'}</div>
+    </div>`;
   }).join('');
+  return `<div class="cat-summary-card"><div class="cat-summary-title">คะแนนรายหมวด</div>${rows}</div>`;
+}
+function renderCategoryDetails(cats){
+  return cats.map(cat => {
+    const items = cat.items.map(it => `
+      <div class="risk-item">
+        <div><div class="ri-name">${it.name}</div><div class="ri-desc">${it.desc}</div></div>
+        <div class="ri-val ${it.cls}">${it.val}</div>
+      </div>`).join('');
+    return `<div class="risk-cat">
+      <div class="risk-cat-head"><div class="name">${cat.icon} ${cat.name}</div><div class="weight">${cat.weight}%</div></div>
+      ${items}
+    </div>`;
+  }).join('');
+}
 
+/* ============== Trend chart ============== */
+function renderTrendChart(){
+  const rows = annualRows().filter(r=>r.risk_score!=null).sort(byDateDesc).slice(0,5).reverse();
+  if (rows.length < 2){
+    return `<div class="trend-card"><div class="trend-title">แนวโน้มคะแนนรวม (ย้อนหลัง)</div><div class="trend-empty">ยังมีข้อมูลไม่พอสร้างกราฟแนวโน้ม (ต้องมีอย่างน้อย 2 ปี)</div></div>`;
+  }
+  const w=280, h=120, pad=24;
+  const scores = rows.map(r=>r.risk_score);
+  const minS = Math.min(...scores,0), maxS = Math.max(...scores,100);
+  const stepX = (w - pad*2) / (rows.length - 1);
+  const pts = rows.map((r,i)=>{
+    const x = pad + i*stepX;
+    const y = h - pad - ((r.risk_score - minS)/(maxS - minS || 1)) * (h - pad*2);
+    return {x,y,label:r.fiscal_label,score:r.risk_score};
+  });
+  const path = pts.map((p,i)=> (i===0?'M':'L') + p.x.toFixed(1) + ' ' + p.y.toFixed(1)).join(' ');
+  const areaPath = path + ` L ${pts[pts.length-1].x.toFixed(1)} ${h-pad} L ${pts[0].x.toFixed(1)} ${h-pad} Z`;
+  const dots = pts.map(p=>`
+    <circle cx="${p.x}" cy="${p.y}" r="3.5" fill="#d1a02c"/>
+    <text x="${p.x}" y="${p.y-9}" font-size="10" font-weight="700" fill="#4a2f22" text-anchor="middle">${Math.round(p.score)}</text>
+    <text x="${p.x}" y="${h-4}" font-size="9" fill="#8a7358" text-anchor="middle">${p.label}</text>
+  `).join('');
+  return `<div class="trend-card">
+    <div class="trend-title">แนวโน้มคะแนนรวม (ย้อนหลัง)</div>
+    <svg viewBox="0 0 ${w} ${h}" style="width:100%; height:auto;">
+      <path d="${areaPath}" fill="#f3c93a" opacity="0.18"/>
+      <path d="${path}" fill="none" stroke="#d1a02c" stroke-width="2.5"/>
+      ${dots}
+    </svg>
+  </div>`;
+}
+
+/* ============== Peer comparison (placeholder) ============== */
+function renderPeerPlaceholder(){
+  return `<div class="peer-card">
+    <div class="peer-title">เปรียบเทียบกับธุรกิจเดียวกัน</div>
+    <div class="peer-empty">ยังไม่มีข้อมูลเพียงพอสำหรับเปรียบเทียบกับธุรกิจในกลุ่มเดียวกัน (ฟีเจอร์นี้อยู่ระหว่างพัฒนา)</div>
+  </div>`;
+}
+
+/* ============== Summary metrics grid ============== */
+function pctDelta(cur, prev){
+  if (cur==null || prev==null || prev===0) return null;
+  return (cur-prev)/Math.abs(prev)*100;
+}
+function absDelta(cur, prev){
+  if (cur==null || prev==null) return null;
+  return cur - prev;
+}
+function miniBars(rows, key){
+  const vals = rows.slice(0,3).reverse().map(r=>r[key]).filter(v=>v!=null);
+  if (vals.length===0) return '';
+  const max = Math.max(...vals.map(v=>Math.abs(v)), 0.0001);
+  return `<div class="sm-bars">${vals.map(v=>{
+    const hpct = Math.max(8, Math.abs(v)/max*100);
+    return `<div class="b" style="height:${hpct}%"></div>`;
+  }).join('')}</div>`;
+}
+function yoyBadge(delta, unit, goodIfPositive=true){
+  if (delta === null || delta === undefined || Number.isNaN(delta)) return `<div class="sm-yoy neutral">YoY —</div>`;
+  const arrow = delta >= 0 ? '▲' : '▼';
+  const cls = (delta>=0) === goodIfPositive ? 'good' : 'bad';
+  return `<div class="sm-yoy ${cls}">YoY ${arrow} ${Math.abs(delta).toFixed(unit==='pp'||unit==='x'?2:1)}${unit==='pp'?'pp':(unit==='x'?' เท่า':'%')}</div>`;
+}
+function renderSummaryGrid(){
+  const rows = annualRows();
+  const cur = rows[0], prev = rows[1];
+  if (!cur) return '';
+  const boxes = [
+    { label:'หนี้สินรวม', val: fmtNum(cur.total_liabilities), key:'total_liabilities', yoy: yoyBadge(pctDelta(cur.total_liabilities, prev && prev.total_liabilities),'%',false) },
+    { label:'หนี้สินที่มีภาระดอกเบี้ย', val: fmtNum(cur.interest_bearing_debt), key:'interest_bearing_debt', yoy: yoyBadge(pctDelta(cur.interest_bearing_debt, prev && prev.interest_bearing_debt),'%',false) },
+    { label:'Net Debt / EBITDA', val: fmtNum(cur.net_debt_to_ebitda,{ratio:true}), key:'net_debt_to_ebitda', yoy: yoyBadge(absDelta(cur.net_debt_to_ebitda, prev && prev.net_debt_to_ebitda),'x',false) },
+    { label:'Interest Coverage', val: fmtNum(cur.interest_coverage_ratio,{ratio:true}), key:'interest_coverage_ratio', yoy: yoyBadge(absDelta(cur.interest_coverage_ratio, prev && prev.interest_coverage_ratio),'x',true) },
+    { label:'CFO', val: fmtNum(cur.cfo), key:'cfo', yoy: yoyBadge(pctDelta(cur.cfo, prev && prev.cfo),'%',true) },
+    { label:'FCF', val: fmtNum(cur.fcf), key:'fcf', yoy: yoyBadge(pctDelta(cur.fcf, prev && prev.fcf),'%',true) },
+    { label:'Current Ratio', val: fmtNum(cur.current_ratio,{ratio:true}), key:'current_ratio', yoy: yoyBadge(absDelta(cur.current_ratio, prev && prev.current_ratio),'x',true) },
+    { label:'กำไรสุทธิ', val: fmtNum(cur.net_income), key:'net_income', yoy: yoyBadge(pctDelta(cur.net_income, prev && prev.net_income),'%',true) },
+    { label:'ROE', val: fmtNum(cur.roe,{pct:true}), key:'roe', yoy: yoyBadge(absDelta(cur.roe, prev && prev.roe),'pp',true) },
+    { label:'รายได้เติบโต', val: fmtNum(cur.revenue_growth,{pct:true}), key:'revenue_growth', yoy: yoyBadge(absDelta(cur.revenue_growth, prev && prev.revenue_growth),'pp',true) },
+  ];
+  const html = boxes.map(b => `
+    <div class="sm-box">
+      <div class="sm-label">${b.label}</div>
+      <div class="sm-value">${b.val}</div>
+      ${miniBars(rows, b.key)}
+      ${b.yoy}
+    </div>`).join('');
+  return `<div class="summary-card"><div class="summary-title">สรุปตัวเลขสำคัญ</div><div class="summary-grid">${html}</div></div>`;
+}
+
+/* ============== Risk Score full page ============== */
+function renderRiskScorePage(row){
+  const cats = buildRiskCategories(row);
   return `
-    <div class="risk-gauge-wrap">
-      ${renderGauge(row.risk_score)}
-      <div><span class="risk-level ${level.cls}">${level.text}</span></div>
-    </div>
-    ${catHtml}
+    ${renderRiskScoreHeader(row)}
+    ${renderCategorySummary(cats)}
+    ${renderTrendChart()}
+    ${renderPeerPlaceholder()}
+    ${renderSummaryGrid()}
+    ${renderCategoryDetails(cats)}
     <div class="risk-disclaimer">
       Risk Score คำนวณจากตัวเลขงบการเงินล่าสุดด้วยเกณฑ์อย่างง่าย ใช้เพื่อเปรียบเทียบเบื้องต้นเท่านั้น
       ไม่ใช่การจัดอันดับเครดิตอย่างเป็นทางการ และไม่ใช่คำแนะนำการลงทุน
-    </div>
-  `;
+    </div>`;
 }
 
 /* ============== หน้าหลัก ============== */
-
 function renderAll(companyName, ticker){
+  const a = latestAnnual(), q = latestQuarterly();
   let bodyHtml = '';
   if (currentTab === 'risk'){
-    const row = currentRows.find(r=>r.period_type==='annual') || currentRows[0];
-    bodyHtml = renderRiskScore(row);
+    bodyHtml = renderRiskScorePage(a || q);
   } else {
-    const row = currentRows.find(r => r.period_type === currentTab) || currentRows[0];
+    const row = currentTab === 'annual' ? a : q;
     bodyHtml = renderMetrics(row);
   }
-
-  const anyRow = currentRows[0];
+  const anyRow = a || q;
+  const industry = anyRow.industry ? `<div class="co-industry">${anyRow.industry}</div>` : '';
   els.result.innerHTML = `
-    <div class="company-header">
-      <h2>${companyName || ticker} <span>(${ticker})</span></h2>
-      <span class="updated">อัปเดตล่าสุด: ${new Date(anyRow.updated_at).toLocaleString('th-TH')}</span>
+    <div class="co-card">
+      <div class="co-top">
+        <div>
+          <span class="co-name">${companyName || ticker}</span>
+          <span class="co-badge">${ticker.replace('.BK','')}</span>
+          ${industry}
+        </div>
+        <div class="co-date">ข้อมูลล่าสุด<br>${thaiDate(anyRow.period_end)}</div>
+      </div>
     </div>
     ${renderTabs()}
     ${bodyHtml}
@@ -469,7 +583,6 @@ async function search(){
     els.btn.disabled = false;
     return;
   }
-
   if (data && data.length > 0){
     currentRows = data;
     els.status.innerHTML = '';
@@ -485,8 +598,7 @@ async function search(){
       headers:{ 'Content-Type':'application/json', 'Authorization': `Bearer ${cfg.SUPABASE_ANON_KEY}` },
       body: JSON.stringify({ ticker })
     });
-  }catch(e){ /* จะลอง poll ต่อแม้ trigger จะ error เผื่อ workflow ถูกรันจากที่อื่นไปแล้ว */ }
-
+  }catch(e){}
   pollForResult(ticker, 0);
 }
 
